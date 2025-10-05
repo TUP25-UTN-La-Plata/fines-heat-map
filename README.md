@@ -49,7 +49,7 @@ La aplicación está pensada para **adultos mayores de 18 años**, incluyendo pe
 ## 🎯 Funcionalidades principales
 
 -   **Mapa interactivo** con pines por comisión (usando Leaflet/OpenStreetMap).
--   **Popups con información de cada comisión**: nombre de sede, número de comisión, tutor responsable, turno, módulos y orientación.
+-   **Popups con información de cada comisión**: nombre de sede, número de comisión, tutor responsable (solo nombre, ver posibilidad de teléfono), turno, módulos y orientación.
 -   **Filtros dinámicos** por turno, módulo y orientación.
 -   **Mapa de calor (heatmap)** opcional para ver concentración de comisiones.
 -   **CRUD de comisiones** (solo para usuarios admin/coordinadores).
