@@ -15,30 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
-from django.urls import path, include
-from .views import home
-
+from django.urls import path
+from .views import instituciones
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", home, name="home"),
-    path(
-        "mapa/",
-        include(("heatmap.urls", "heatmap"), namespace="heatmap"),
-    ),
-    path(
-        "instituciones/",
-        include(
-            ("gestion_instituciones.urls", "gestion_instituciones"),
-            namespace="instituciones",
-        ),
-    ),
-    path(
-        "comisiones/",
-        include(
-            ("gestion_comisiones.urls", "gestion_comisiones"),
-            namespace="comisiones",
-        ),
-    ),
+    path("", instituciones, name="instituciones"),
 ]

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Heat Map{% endblock %}</title>
+</head>
+<body>
+    <h1 style="color: blue;">{% block content %}Base{% endblock %}</h1>
+    <a href="{% url 'home' %}">INICIO</a>
+    <a href="{% url 'heatmap:mapa' %}">MAPA</a>
+    <a href="{% url 'gestion_instituciones:instituciones' %}">INSTITUCIONES</a>
+    <a href="{% url 'gestion_comisiones:comisiones' %}">COMISIONES</a>
+</body>
+</html>
