@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa con Leaflet y Heatmap Interactivo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        #toggleHeatmap {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            padding: 10px;
+            background-color: #fff;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #toggleHeatmap:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Estilos del modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-top: 0;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-confirm {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-cancel {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-confirm:hover { background-color: #45a049; }
+        .btn-cancel:hover { background-color: #da190b; }
+    </style>
+</head>
+<body>
+    <button id="toggleHeatmap">Desactivar Heatmap</button>
+    <div id="map"></div>
+
+    <!-- Modal para agregar punto -->
+    <div id="addPointModal" class="modal">
+        <div class="modal-content">
+            <h3>Agregar Punto</h3>
+            <p><strong>Coordenadas:</strong> <span id="modalCoords"></span></p>
+            <label for="pointName">Nombre de referencia:</label>
+            <input type="text" id="pointName" placeholder="Ej: Casa de Juan" maxlength="50">
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="cancelBtn">Cancelar</button>
+                <button class="btn-confirm" id="confirmBtn">Agregar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script>
+        // Inicializar el mapa
+        const map = L.map('map').setView([-34.6037, -58.3816], 13);
+
+        // Añadir tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Capas
+        let heatLayer;
+        let markers = [];
+        let heatPoints = [];
+
+        // Cargar datos guardados
+        function loadSavedPoints() {
+            const saved = localStorage.getItem('heatmapPoints');
+            if (saved) {
+                const data = JSON.parse(saved);
+                heatPoints = data.heat || [];
+                data.markers.forEach(m => addMarkerToMap(m.lat, m.lng, m.name, false));
+                updateHeatmap();
+            } else {
+                // Puntos iniciales
+                const initial = [
+                    [-34.939123, -57.969629, 0.8],
+                    [-34.909726, -57.891654, 0.6],
+                    [-34.913797, -58.971664, 0.9],
+                    [-34.912200, -58.930800, 0.7],
+                    [-34.961501, -58.938500, 0.5]
+                ];
+                heatPoints = initial;
+                addMarkerToMap(-34.939123, -57.969629, "Casa de Tincho", false);
+            }
+            updateHeatmap();
+        }
+
+        // Guardar en localStorage
+        function savePoints() {
+            const data = {
+                markers: markers.map(m => ({ lat: m.latlng.lat, lng: m.latlng.lng, name: m.name })),
+                heat: heatPoints
+            };
+            localStorage.setItem('heatmapPoints', JSON.stringify(data));
+        }
+
+        // Actualizar heatmap
+        function updateHeatmap() {
+            if (heatLayer) map.removeLayer(heatLayer);
+            heatLayer = L.heatLayer(heatPoints, {
+                radius: 95,
+                blur: 1,
+                maxZoom: 17,
+                max: 1.0,
+                gradient: { 0.1: 'red', 0.4: 'blue', 0.65: 'lime' }
+            }).addTo(map);
+        }
+
+        // Añadir marcador al mapa
+        function addMarkerToMap(lat, lng, name, save = true) {
+            const marker = L.marker([lat, lng]).addTo(map);
+            marker.bindPopup(`<b>${name}</b><br>${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+            markers.push({ marker, latlng: { lat, lng }, name });
+            if (save) {
+                heatPoints.push([lat, lng, 0.7]); // Intensidad fija
+                updateHeatmap();
+                savePoints();
+            }
+            return marker;
+        }
+
+        // Variables para el modal
+        let pendingLatLng = null;
+        const modal = document.getElementById('addPointModal');
+        const modalCoords = document.getElementById('modalCoords');
+        const pointNameInput = document.getElementById('pointName');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        // Abrir modal al hacer clic
+        map.on('click', function(e) {
+            pendingLatLng = e.latlng;
+            modalCoords.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+            pointNameInput.value = '';
+            modal.style.display = 'flex';
+            pointNameInput.focus();
+        });
+
+        // Confirmar adición
+        confirmBtn.onclick = function() {
+            const name = pointNameInput.value.trim();
+            if (!name) {
+                alert("Por favor, ingresa un nombre de referencia.");
+                return;
+            }
+            addMarkerToMap(pendingLatLng.lat, pendingLatLng.lng, name);
+            modal.style.display = 'none';
+        };
+
+        // Cancelar
+        cancelBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+
+        // Cerrar con Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') modal.style.display = 'none';
+        });
+
+        // Botón toggle heatmap
+        let isHeatmapActive = true;
+        const toggleButton = document.getElementById('toggleHeatmap');
+        toggleButton.addEventListener('click', function() {
+            if (isHeatmapActive) {
+                map.removeLayer(heatLayer);
+                toggleButton.textContent = 'Activar Heatmap';
+                isHeatmapActive = false;
+            } else {
+                updateHeatmap();
+                toggleButton.textContent = 'Desactivar Heatmap';
+                isHeatmapActive = true;
+            }
+        });
+
+        // Cargar puntos al inicio
+        loadSavedPoints();
+
+        // Marcador inicial (si no hay guardados)
+        if (markers.length === 0) {
+            addMarkerToMap(-34.939123, -57.969629, "Casa de Tincho", false);
+        }
+    </script>
+</body>
+</html>
