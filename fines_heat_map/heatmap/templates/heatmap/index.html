@@ -96,6 +96,11 @@
     </style>
 </head>
 <body>
+    {% if user.is_authenticated %}
+    <div class="logout-container">
+        <a href="{% url 'logout' %}" class="logout-btn">Cerrar sesión</a>
+    </div>
+    {% endif %}
     <button id="toggleHeatmap">Desactivar Heatmap</button>
     <div id="map"></div>
 
