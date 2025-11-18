@@ -1,13 +1,111 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>{% block title %}Heat Map{% endblock %}</title>
+{% load static %}
+<html lang="es">
+<head style="background-color: #3C5A80;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FinEs Mapa Interactivo{% endblock %}</title>
+    
+    <!-- TailwindCSS -->
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <h1 style="color: blue;">{% block content %}Base{% endblock %}</h1>
-    <a href="{% url 'home' %}">INICIO</a>
-    <a href="{% url 'heatmap:mapa' %}">MAPA</a>
-    <a href="{% url 'gestion_instituciones:instituciones' %}">INSTITUCIONES</a>
-    <a href="{% url 'gestion_comisiones:comisiones' %}">COMISIONES</a>
+    <!-- Navegación -->
+    <nav class="bg-fines-encabezado shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    {% load static %}
+                    <a href="{% url 'home' %}" class="flex items-center space-x-2 text-white hover:text-gray-300 transition-colors">
+                        <img src="{% static 'img/texto_transparente.png' %}" alt="FinEs Logo" class="h-8 w-auto">
+                        <span class="text-xl font-bold">Mapa de Calor</span>
+                    </a>
+                </div>
+
+                <!-- Botón de menú para móviles -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-white hover:text-gray-300 focus:outline-none focus:text-gray-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m0 6h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Menú desktop -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="{% url 'home' %}" class="text-white hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium transition-colors">INICIO</a>
+                    <a href="{% url 'heatmap:mapa' %}" class="text-white hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium transition-colors">MAPA</a>
+                    <a href="{% url 'gestion_instituciones:instituciones' %}" class="text-white hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium transition-colors">INSTITUCIONES</a>
+                    <a href="{% url 'gestion_comisiones:comisiones' %}" class="text-white hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium transition-colors">COMISIONES</a>
+                    <a href="{% url 'admin:index' %}" class="text-white hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium transition-colors">ADMINISTRACION</a>
+                </div>
+            </div>
+
+            <!-- Menú móvil que se despliega hacia abajo -->
+            <div id="navigation-menu" class="hidden md:hidden border-t border-fines-blue">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="{% url 'home' %}" class="text-white hover:text-gray-300 block px-3 py-2 rounded-md text-base font-medium transition-colors">INICIO</a>
+                    <a href="{% url 'heatmap:mapa' %}" class="text-white hover:text-gray-300 block px-3 py-2 rounded-md text-base font-medium transition-colors">MAPA</a>
+                    <a href="{% url 'gestion_instituciones:instituciones' %}" class="text-white hover:text-gray-300 block px-3 py-2 rounded-md text-base font-medium transition-colors">INSTITUCIONES</a>
+                    <a href="{% url 'gestion_comisiones:comisiones' %}" class="text-white hover:text-gray-300 block px-3 py-2 rounded-md text-base font-medium transition-colors">COMISIONES</a>
+                    <a href="{% url 'admin:index' %}" class="text-white hover:text-gray-300 block px-3 py-2 rounded-md text-base font-medium transition-colors">ADMINISTRACION</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+            
+    <!-- Contenido principal -->
+    <main class="min-h-screen bg-gray-50 p-4">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Componentes adicionales que pueden usar TailwindCSS -->
+    
+    <!-- Logout container (ejemplo) -->
+    <!-- <div class="absolute top-2.5 right-2.5 z-[1100]">
+        <a href="#" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded no-underline font-semibold shadow-sm hover:opacity-95 transition-all">
+            Logout
+        </a>
+    </div> -->
+    
+    <!-- Toggle heatmap button (ejemplo) -->
+    <!-- <button id="toggleHeatmap" class="absolute top-2.5 left-2.5 z-[1000] p-2.5 bg-white border-2 border-gray-800 rounded cursor-pointer text-sm hover:bg-gray-50 transition-colors">
+        Toggle Heatmap
+    </button> -->
+    
+    <!-- Modal (ejemplo) -->
+    <!-- <div class="modal hidden fixed z-[2000] inset-0 w-full h-full bg-black bg-opacity-40 flex justify-center items-center">
+        <div class="bg-white p-5 rounded-lg w-80 shadow-lg">
+            <h3 class="mt-0 text-lg font-semibold mb-4">Modal Title</h3>
+            <input type="text" class="w-full p-2 my-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex justify-between mt-4">
+                <button class="btn-confirm px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded transition-colors">
+                    Confirm
+                </button>
+                <button class="btn-cancel px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- JavaScript para el menú móvil -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const navigationMenu = document.getElementById('navigation-menu');
+            
+            if (mobileMenuButton && navigationMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    navigationMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
