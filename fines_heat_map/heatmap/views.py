@@ -1,4 +1,6 @@
 from django.shortcuts import render
 
-def index(request):
-    return render(request, 'heatmap/index.html')
+
+# Create your views here.
+def mapa(request):
+    return render(request, "heatmap/mapa.html")

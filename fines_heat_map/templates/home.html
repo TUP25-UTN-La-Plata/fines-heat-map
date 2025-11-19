@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">FinEs Mapa Interactivo</h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            Bienvenido al mapa de calor del Plan FinEs. Encuentra sedes y comisiones cercanas a tu ubicación.
+        </p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="card-fines text-center">
+            <h3 class="text-lg font-semibold mb-2 text-gray-800">Mapa Interactivo</h3>
+            <p class="text-fines mb-4">Explora todas las sedes y comisiones en un mapa interactivo.</p>
+            <a href="{% url 'heatmap:mapa' %}" class="btn-fines">Ver Mapa</a>
+        </div>
+        
+        <div class="card-fines text-center">
+            <h3 class="text-lg font-semibold mb-2 text-gray-800">Instituciones</h3>
+            <p class="text-fines mb-4">Gestiona y consulta información de las instituciones.</p>
+            <a href="{% url 'gestion_instituciones:instituciones' %}" class="btn-fines">Ver Instituciones</a>
+        </div>
+        
+        <div class="card-fines text-center">
+            <h3 class="text-lg font-semibold mb-2 text-gray-800">Comisiones</h3>
+            <p class="text-fines mb-4">Administra las comisiones y sus detalles.</p>
+            <a href="{% url 'gestion_comisiones:comisiones' %}" class="btn-fines">Ver Comisiones</a>
+        </div>
+    </div>
+    
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>Tip:</strong> Utiliza los filtros en el mapa para encontrar comisiones por turno, módulo y orientación.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

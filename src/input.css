@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados para FinEs */
+.btn-fines {
+  @apply bg-fines-blue hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.card-fines {
+  @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+}
+
+.text-fines {
+  @apply text-gray-800 leading-relaxed;
+}
+
+/* Estilos para el mapa */
+.map-container {
+  @apply h-[500px] w-full rounded-lg overflow-hidden shadow-lg;
+}
+
+/* Botones de acción para el mapa */
+.map-btn {
+  @apply absolute z-[1000] p-2.5 bg-white border-2 border-gray-800 rounded cursor-pointer text-sm hover:bg-gray-50 transition-colors shadow-md;
+}
+
+.map-btn-toggle {
+  @apply top-2.5 left-2.5;
+}
+
+/* Estilos para logout */
+.logout-container {
+  @apply absolute top-2.5 right-2.5 z-[1100];
+}
+
+.logout-btn {
+  @apply bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded no-underline font-semibold shadow-sm hover:opacity-95 transition-all;
+}
+
+/* Modal personalizado */
+.modal-overlay {
+  @apply fixed z-[2000] inset-0 w-full h-full bg-black bg-opacity-40 flex justify-center items-center;
+}
+
+.modal-content {
+  @apply bg-white p-5 rounded-lg w-80 shadow-lg;
+}
+
+.modal-input {
+  @apply w-full p-2 my-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.modal-buttons {
+  @apply flex justify-between mt-4;
+}
+
+.btn-confirm {
+  @apply px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded transition-colors;
+}
+
+.btn-cancel {
+  @apply px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors;
+}
