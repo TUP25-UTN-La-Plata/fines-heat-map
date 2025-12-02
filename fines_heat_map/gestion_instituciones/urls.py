@@ -16,8 +16,8 @@ Including another URLconf
 """
 
 from django.urls import path
-from .views import instituciones
+from . import views
 
 urlpatterns = [
-    path("", instituciones, name="instituciones"),
+    path("", views.lista_instituciones, name="lista_instituciones"),
 ]

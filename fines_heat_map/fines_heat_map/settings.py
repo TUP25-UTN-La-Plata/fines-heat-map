@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-bxs-1kt2zb$&l%wtk0z)-&#-nrrcbxq9f63zz13797czi5r0jh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -127,3 +127,61 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ==================================================
+# CONFIGURACIÓN PERSONALIZADA DEL PROYECTO FINES
+# ==================================================
+
+# Configuración del mapa interactivo
+MAP_CONFIG = {
+    "default_center": [-34.6037, -58.3816],  # Buenos Aires, Argentina
+    "default_zoom": 12,
+    "max_zoom": 18,
+    "min_zoom": 6,
+    "heatmap_radius": 25,
+    "cluster_max_zoom": 15,
+}
+
+# Datos de ejemplo para desarrollo (reemplazar con modelos reales)
+EXAMPLE_PLACES = [
+    {
+        "id": 1,
+        "name": "Escuela Media N°3",
+        "commission_number": "101",
+        "city": "La Plata",
+        "province": "Buenos Aires",
+        "turno": "Noche",
+        "address": "Av. 7 y 60",
+        "lat": -34.9215,
+        "lng": -57.9545,
+        "modules": ["Matemática", "Lengua"],
+        "orientation": "Ciencias Sociales",
+    },
+    {
+        "id": 2,
+        "name": "Centro Comunitario El Sol",
+        "commission_number": "102",
+        "city": "La Plata",
+        "province": "Buenos Aires",
+        "turno": "Tarde",
+        "address": "Calle 12 y 50",
+        "lat": -34.9105,
+        "lng": -57.9435,
+        "modules": ["Biología", "Química"],
+        "orientation": "Ciencias Naturales",
+    },
+    {
+        "id": 3,
+        "name": "Instituto Técnico Industrial",
+        "commission_number": "103",
+        "city": "Mar del Plata",
+        "province": "Buenos Aires",
+        "turno": "Mañana",
+        "address": "Av. Constitución 1234",
+        "lat": -38.0055,
+        "lng": -57.5426,
+        "modules": ["Tecnología", "Matemática"],
+        "orientation": "Técnica",
+    },
+]

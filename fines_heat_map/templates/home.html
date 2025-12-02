@@ -1,42 +1,629 @@
+<!-- prettier-ignore-file -->
+<!-- beautify ignore:start -->
 {% extends "base.html" %}
+{% block title %}Mapa de Sedes - FinEs Mapa Interactivo{% endblock title %}
+{% block main_classes %}{% endblock %}
+{% block head_extra %}
+<style>
+    #map {
+        height: 100vh;
+        width: 100%;
+    }
+
+    /* Controles flotantes */
+    .map-controls {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .search-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        min-width: 400px;
+    }
+
+    .filter-panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+        min-width: 400px;
+    }
+
+    .filter-panel.show {
+        max-height: 500px;
+        opacity: 1;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .filter-btn {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .filter-btn:hover {
+        background: #f9fafb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-btn.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+
+    .reset-btn {
+        background: white;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        padding: 8px 12px;
+        font-size: 14px;
+        min-width: auto;
+    }
+
+    .reset-btn:hover {
+        background: #f9fafb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Dropdown menus */
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        min-width: 200px;
+        padding: 8px;
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+    }
+
+    .dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .dropdown-option {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        margin: 2px 0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 14px;
+        gap: 8px;
+    }
+
+    .dropdown-option:hover {
+        background-color: #f3f4f6;
+    }
+
+    .dropdown-option input[type="radio"] {
+        margin: 0;
+        width: 16px;
+        height: 16px;
+    }
+
+    .dropdown-option span {
+        flex: 1;
+    }
+
+    .dropdown-option input[type="radio"]:checked + span {
+        font-weight: 500;
+        color: #3b82f6;
+    }
+
+    /* Controles del mapa de calor */
+    .heatmap-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+
+    .heatmap-toggle {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .map-controls {
+            left: 10px;
+            right: 10px;
+            top: 10px;
+        }
+
+        .heatmap-controls {
+            top: 10px;
+            right: 10px;
+        }
+
+        .filter-buttons {
+            max-width: calc(100vw - 100px);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .filter-buttons::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock head_extra %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">FinEs Mapa Interactivo</h1>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-            Bienvenido al mapa de calor del Plan FinEs. Encuentra sedes y comisiones cercanas a tu ubicación.
-        </p>
-    </div>
-    
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div class="card-fines text-center">
-            <h3 class="text-lg font-semibold mb-2 text-gray-800">Mapa Interactivo</h3>
-            <p class="text-fines mb-4">Explora todas las sedes y comisiones en un mapa interactivo.</p>
-            <a href="{% url 'heatmap:mapa' %}" class="btn-fines">Ver Mapa</a>
-        </div>
-        
-        <div class="card-fines text-center">
-            <h3 class="text-lg font-semibold mb-2 text-gray-800">Instituciones</h3>
-            <p class="text-fines mb-4">Gestiona y consulta información de las instituciones.</p>
-            <a href="{% url 'gestion_instituciones:instituciones' %}" class="btn-fines">Ver Instituciones</a>
-        </div>
-        
-        <div class="card-fines text-center">
-            <h3 class="text-lg font-semibold mb-2 text-gray-800">Comisiones</h3>
-            <p class="text-fines mb-4">Administra las comisiones y sus detalles.</p>
-            <a href="{% url 'gestion_comisiones:comisiones' %}" class="btn-fines">Ver Comisiones</a>
-        </div>
-    </div>
-    
-    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
-        <div class="flex">
-            <div class="ml-3">
-                <p class="text-sm text-blue-700">
-                    <strong>Tip:</strong> Utiliza los filtros en el mapa para encontrar comisiones por turno, módulo y orientación.
-                </p>
+<h1 class="sr-only">Mapa Interactivo de Sedes y Comisiones</h1>
+
+<div class="relative w-full h-screen">
+    <!-- Mapa de fondo -->
+    <div id="map" class="w-full h-full" role="application" aria-label="Mapa interactivo de sedes y comisiones"></div>
+
+    <!-- Controles flotantes principales -->
+    <div class="map-controls">
+        <!-- Búsqueda principal -->
+        <div class="search-container fade-in">
+            <form method="get" id="search-form" class="flex">
+                <input type="text" name="search" id="main-search" value="{{ request.GET.search|default:'' }}"
+                    placeholder="Buscar instituciones, tutores o comisiones..."
+                    class="flex-1 px-4 py-3 border-none rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="button" id="filters-toggle"
+                    class="px-4 py-3 border-l border-gray-200 text-gray-500 hover:text-gray-700 rounded-r-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894L9 17.382A1 1 0 019 16.382V13.414a1 1 0 00-.293-.707L2.293 6.293A1 1 0 012 5.586V4z">
+                        </path>
+                    </svg>
+                </button>
+                
+                <!-- Campos hidden para sincronizar con dropdowns rápidos -->
+                <input type="hidden" id="quick-turno" name="turno" value="{{ request.GET.turno|default:'' }}">
+                <input type="hidden" id="quick-modules" name="modules" value="{{ request.GET.modules|default:'' }}">
+                <input type="hidden" id="quick-orientation" name="orientation" value="{{ request.GET.orientation|default:'' }}">
+            </form>
+
+            <!-- Panel de filtros expandible -->
+            <div id="filter-panel" class="filter-panel">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Turno</label>
+                        <select name="turno" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">Todos</option>
+                            <option value="mañana" {% if request.GET.turno == "mañana" %}selected{% endif %}>Mañana</option>
+                            <option value="tarde" {% if request.GET.turno == "tarde" %}selected{% endif %}>Tarde</option>
+                            <option value="noche" {% if request.GET.turno == "noche" %}selected{% endif %}>Noche</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Módulos</label>
+                        <select name="modules" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">Todos</option>
+                            <option value="Matemática" {% if request.GET.modules == "Matemática" %}selected{% endif %}>Matemática</option>
+                            <option value="Lengua" {% if request.GET.modules == "Lengua" %}selected{% endif %}>Lengua</option>
+                            <option value="Historia" {% if request.GET.modules == "Historia" %}selected{% endif %}>Historia</option>
+                            <option value="Biología" {% if request.GET.modules == "Biología" %}selected{% endif %}>Biología</option>
+                            <option value="Química" {% if request.GET.modules == "Química" %}selected{% endif %}>Química</option>
+                            <option value="Física" {% if request.GET.modules == "Física" %}selected{% endif %}>Física</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Orientación</label>
+                        <select name="orientation" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">Todas</option>
+                            <option value="Ciencias Sociales" {% if request.GET.orientation == "Ciencias Sociales" %}selected{% endif %}>Ciencias Sociales</option>
+                            <option value="Ciencias Naturales" {% if request.GET.orientation == "Ciencias Naturales" %}selected{% endif %}>Ciencias Naturales</option>
+                            <option value="Técnica" {% if request.GET.orientation == "Técnica" %}selected{% endif %}>Técnica</option>
+                            <option value="Economía" {% if request.GET.orientation == "Economía" %}selected{% endif %}>Economía</option>
+                            <option value="Arte" {% if request.GET.orientation == "Arte" %}selected{% endif %}>Arte</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+                    <button type="button" id="clear-filters"
+                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                        Limpiar filtros
+                    </button>
+                    <button type="submit" form="search-form"
+                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Aplicar filtros
+                    </button>
+                </div>
             </div>
+        </div>
+
+        <!-- Botones de filtros rápidos -->
+        <div class="filter-buttons">
+            <div class="filter-dropdown">
+                <button type="button" class="filter-btn dropdown-toggle" data-filter="turno">
+                    🕐 <span id="turno-label">Turno</span> ▼
+                </button>
+                <div class="dropdown-menu" id="turno-dropdown">
+                    <label class="dropdown-option">
+                        <input type="radio" name="turno-quick" value="" checked>
+                        <span>Todos los turnos</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="turno-quick" value="mañana">
+                        <span>🌅 Mañana</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="turno-quick" value="tarde">
+                        <span>🌇 Tarde</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="turno-quick" value="noche">
+                        <span>🌙 Noche</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-dropdown">
+                <button type="button" class="filter-btn dropdown-toggle" data-filter="modules">
+                    📚 <span id="modules-label">Módulo</span> ▼
+                </button>
+                <div class="dropdown-menu" id="modules-dropdown">
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="" checked>
+                        <span>Todos los módulos</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Matemática">
+                        <span>📊 Matemática</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Lengua">
+                        <span>✍️ Lengua</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Historia">
+                        <span>📜 Historia</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Biología">
+                        <span>🧬 Biología</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Química">
+                        <span>🧪 Química</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="modules-quick" value="Física">
+                        <span>⚛️ Física</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-dropdown">
+                <button type="button" class="filter-btn dropdown-toggle" data-filter="orientation">
+                    🎓 <span id="orientation-label">Orientación</span> ▼
+                </button>
+                <div class="dropdown-menu" id="orientation-dropdown">
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="" checked>
+                        <span>Todas las orientaciones</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="Ciencias Sociales">
+                        <span>📚 Ciencias Sociales</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="Ciencias Naturales">
+                        <span>🔬 Ciencias Naturales</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="Técnica">
+                        <span>🔧 Técnica</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="Economía">
+                        <span>💼 Economía</span>
+                    </label>
+                    <label class="dropdown-option">
+                        <input type="radio" name="orientation-quick" value="Arte">
+                        <span>🎨 Arte</span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="button" class="filter-btn reset-btn" id="reset-all-filters">
+                🔄 Limpiar
+            </button>
+        </div>
+    </div>
+
+    <!-- Control de mapa de calor -->
+    <div class="heatmap-controls">
+        <div class="heatmap-toggle">
+            <label class="flex items-center cursor-pointer">
+                <input type="checkbox" id="heatmap-toggle" {% if show_heatmap %}checked{% endif %} class="mr-2">
+                <span class="text-sm font-medium text-gray-700">Mapa de calor</span>
+            </label>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- JSON data for places -->
+{{ places|json_script:"places-data" }}
+
+{% endblock content %}
+
+{% block scripts_extra %}
+{% include "includes/map_scripts.html" %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const filtersToggle = document.getElementById('filters-toggle');
+        const filterPanel = document.getElementById('filter-panel');
+        const searchForm = document.getElementById('search-form');
+        const heatmapToggle = document.getElementById('heatmap-toggle');
+        const resetAllBtn = document.getElementById('reset-all-filters');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+
+        // Toggle panel de filtros avanzados
+        if (filtersToggle && filterPanel) {
+            filtersToggle.addEventListener('click', function () {
+                filterPanel.classList.toggle('show');
+            });
+        }
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.filter-dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Toggle dropdowns
+        document.querySelectorAll('.dropdown-toggle').forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const dropdown = this.nextElementSibling;
+                const isOpen = dropdown.classList.contains('show');
+
+                // Cerrar todos los dropdowns
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+
+                // Abrir este dropdown si no estaba abierto
+                if (!isOpen) {
+                    dropdown.classList.add('show');
+                }
+            });
+        });
+
+        // Manejo de selección en dropdowns
+        document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const filterType = this.name.replace('-quick', '');
+                const filterValue = this.value;
+                const label = document.getElementById(filterType + '-label');
+                const dropdown = this.closest('.dropdown-menu');
+                const toggle = dropdown.previousElementSibling;
+
+                // Actualizar label del botón
+                if (filterValue === '') {
+                    label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                    toggle.classList.remove('active');
+                } else {
+                    const optionText = this.nextElementSibling.textContent.trim();
+                    label.textContent = optionText;
+                    toggle.classList.add('active');
+                }
+
+                // Actualizar campos hidden del formulario
+                const hiddenField = document.getElementById(`quick-${filterType}`);
+                if (hiddenField) {
+                    hiddenField.value = filterValue;
+                }
+
+                // También actualizar el select del panel de filtros avanzados si existe
+                const formField = document.querySelector(`select[name="${filterType}"]`);
+                if (formField) {
+                    formField.value = filterValue;
+                }
+
+                // Cerrar dropdown
+                dropdown.classList.remove('show');
+
+                // Aplicar filtro automáticamente
+                searchForm.submit();
+            });
+        });
+
+        // Reset todos los filtros
+        if (resetAllBtn) {
+            resetAllBtn.addEventListener('click', function () {
+                // Limpiar formulario y campos hidden
+                searchForm.querySelectorAll('input, select').forEach(field => {
+                    field.value = '';
+                });
+
+                // Limpiar también campos hidden específicos
+                document.getElementById('quick-turno').value = '';
+                document.getElementById('quick-modules').value = '';
+                document.getElementById('quick-orientation').value = '';
+
+                // Resetear dropdowns
+                document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
+                    radio.checked = radio.value === '';
+                });
+
+                // Resetear labels de dropdowns
+                document.getElementById('turno-label').textContent = 'Turno';
+                document.getElementById('modules-label').textContent = 'Módulo';
+                document.getElementById('orientation-label').textContent = 'Orientación';
+
+                // Remover clase active de botones
+                document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Aplicar filtros (limpiar)
+                searchForm.submit();
+            });
+        }
+
+        // Clear filters desde panel avanzado
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function () {
+                // Limpiar campos del panel
+                filterPanel.querySelectorAll('input, select').forEach(field => {
+                    field.value = '';
+                });
+
+                // También limpiar campos hidden
+                document.getElementById('quick-turno').value = '';
+                document.getElementById('quick-modules').value = '';
+                document.getElementById('quick-orientation').value = '';
+
+                // Resetear dropdowns
+                document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
+                    radio.checked = radio.value === '';
+                });
+
+                // Resetear labels
+                document.getElementById('turno-label').textContent = 'Turno';
+                document.getElementById('modules-label').textContent = 'Módulo';
+                document.getElementById('orientation-label').textContent = 'Orientación';
+
+                // Remover clase active
+                document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+            });
+        }
+
+        // Envío del formulario con Enter en búsqueda
+        document.getElementById('main-search').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+
+        // Sincronizar estado del checkbox con la variable global heatmapActive en map_scripts.js
+        if (typeof setHeatmapState === 'function') {
+            heatmapToggle.addEventListener('change', function () {
+                setHeatmapState(this.checked);
+            });
+
+            // Configurar estado inicial del heatmap
+            {% if show_heatmap %}
+            heatmapToggle.checked = true;
+            setHeatmapState(true);
+            {% endif %}
+        } else {
+            console.warn('La función setHeatmapState no está disponible. Asegurate de que map_scripts.html se cargue correctamente.');
+        }
+
+        // Cargar los places y añadirlos al mapa si existen
+        var placesData = [];
+        try {
+            const placesElement = document.getElementById('places-data');
+            if (placesElement && placesElement.textContent) {
+                placesData = JSON.parse(placesElement.textContent);
+            }
+        } catch (e) {
+            console.error('Error al parsear places_json:', e);
+        }
+
+        if (placesData.length > 0 && typeof addPlacesToMap === 'function') {
+            addPlacesToMap(placesData);
+        } else if (placesData.length === 0) {
+            console.log('No hay lugares para mostrar en el mapa.');
+        }
+
+        // Inicializar dropdowns con valores actuales de la URL
+        const currentParams = new URLSearchParams(window.location.search);
+
+        // Para cada tipo de filtro dropdown, seleccionar el radio button correspondiente
+        ['turno', 'modules', 'orientation'].forEach(filterType => {
+            const paramValue = currentParams.get(filterType) || '';
+
+            // Encontrar y marcar el radio button correcto
+            const radioButton = document.querySelector(`input[name="${filterType}-quick"][value="${paramValue}"]`);
+            if (radioButton) {
+                radioButton.checked = true;
+
+                // Actualizar el texto del botón del dropdown
+                const label = document.getElementById(filterType + '-label');
+                const dropdown = radioButton.closest('.dropdown-menu');
+                const toggle = dropdown.previousElementSibling;
+
+                if (paramValue === '') {
+                    label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                    toggle.classList.remove('active');
+                } else {
+                    const optionText = radioButton.nextElementSibling.textContent.trim();
+                    label.textContent = optionText;
+                    toggle.classList.add('active');
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock scripts_extra %}

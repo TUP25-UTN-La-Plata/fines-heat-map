@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,12 +12,14 @@
             height: 500px;
             width: 100%;
         }
+
         .logout-container {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 1100;
         }
+
         .logout-btn {
             background-color: #f44336;
             color: #fff;
@@ -24,9 +27,13 @@
             border-radius: 4px;
             text-decoration: none;
             font-weight: 600;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
-        .logout-btn:hover { opacity: 0.95; }
+
+        .logout-btn:hover {
+            opacity: 0.95;
+        }
+
         #toggleHeatmap {
             position: absolute;
             top: 10px;
@@ -39,6 +46,7 @@
             cursor: pointer;
             font-size: 14px;
         }
+
         #toggleHeatmap:hover {
             background-color: #f0f0f0;
         }
@@ -52,20 +60,23 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.4);
+            background-color: rgba(0, 0, 0, 0.4);
             justify-content: center;
             align-items: center;
         }
+
         .modal-content {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
             width: 300px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
         .modal-content h3 {
             margin-top: 0;
         }
+
         .modal-content input {
             width: 100%;
             padding: 8px;
@@ -73,32 +84,46 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         .modal-buttons {
             display: flex;
             justify-content: space-between;
         }
+
         .modal-buttons button {
             padding: 8px 16px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
+
         .btn-confirm {
             background-color: #4CAF50;
             color: white;
         }
+
         .btn-cancel {
             background-color: #f44336;
             color: white;
         }
-        .btn-confirm:hover { background-color: #45a049; }
-        .btn-cancel:hover { background-color: #da190b; }
+
+        .btn-confirm:hover {
+            background-color: #45a049;
+        }
+
+        .btn-cancel:hover {
+            background-color: #da190b;
+        }
     </style>
 </head>
+
 <body>
     {% if user.is_authenticated %}
     <div class="logout-container">
-        <a href="{% url 'logout' %}" class="logout-btn">Cerrar sesión</a>
+        <form method="post" action="{% url 'admin:logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Cerrar sesión</button>
+        </form>
     </div>
     {% endif %}
     <button id="toggleHeatmap">Desactivar Heatmap</button>
@@ -200,7 +225,7 @@
         const cancelBtn = document.getElementById('cancelBtn');
 
         // Abrir modal al hacer clic
-        map.on('click', function(e) {
+        map.on('click', function (e) {
             pendingLatLng = e.latlng;
             modalCoords.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
             pointNameInput.value = '';
@@ -209,7 +234,7 @@
         });
 
         // Confirmar adición
-        confirmBtn.onclick = function() {
+        confirmBtn.onclick = function () {
             const name = pointNameInput.value.trim();
             if (!name) {
                 alert("Por favor, ingresa un nombre de referencia.");
@@ -220,19 +245,19 @@
         };
 
         // Cancelar
-        cancelBtn.onclick = function() {
+        cancelBtn.onclick = function () {
             modal.style.display = 'none';
         };
 
         // Cerrar con Escape
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') modal.style.display = 'none';
         });
 
         // Botón toggle heatmap
         let isHeatmapActive = true;
         const toggleButton = document.getElementById('toggleHeatmap');
-        toggleButton.addEventListener('click', function() {
+        toggleButton.addEventListener('click', function () {
             if (isHeatmapActive) {
                 map.removeLayer(heatLayer);
                 toggleButton.textContent = 'Activar Heatmap';
@@ -253,4 +278,5 @@
         }
     </script>
 </body>
+
 </html>
