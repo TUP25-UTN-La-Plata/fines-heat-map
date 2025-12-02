@@ -1,13 +1,71 @@
-# FinEs Mapa Interactivo
+# 🗺️ FinEs Mapa Interactivo
 
-**FinEs Mapa Interactivo** es una webapp destinada a estudiantes adultos, tutores y coordinadores del Plan FinEs (Secundaria para adultos, Provincia de Buenos Aires).  
-El objetivo principal es **visualizar las sedes y comisiones FinEs en un mapa interactivo**, filtrarlas por turno, módulo y orientación, y brindar información clara y accesible sobre cada comisión.
+Sistema web de visualización de densidad educativa para instituciones del programa FinEs mediante mapas de calor interactivos.
 
-La aplicación está pensada para **adultos mayores de 18 años**, incluyendo personas con poca experiencia digital o de zonas vulnerables, por lo que la interfaz debe ser **simple, clara, accesible y motivadora**.
+![Django](https://img.shields.io/badge/Django-5.2.7-green)
+![Python](https://img.shields.io/badge/Python-3.13.5-blue)
+![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-brightgreen)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Latest-blue)
 
----
+## 🎯 Características Principales
 
-## Instalación
+- **📊 Mapa de Calor**: Visualización de densidad de instituciones educativas
+- **🎨 Admin Moderno**: Panel administrativo personalizado con Tailwind CSS
+- **🔍 Filtros Avanzados**: Búsqueda por ubicación, tipo y características
+- **📱 Responsive**: Diseño adaptable para todos los dispositivos
+- **🔐 Seguro**: Autenticación y protección CSRF integrada
+
+## 🚀 Instalación Rápida
+
+### Prerrequisitos
+
+- Python 3.9+
+- pip
+- Git
+
+### Pasos de Instalación
+
+1. **Clonar el repositorio**
+
+```bash
+git clone https://github.com/TUP25-UTN-La-Plata/fines-heat-map.git
+cd fines-heat-map
+```
+
+2. **Crear entorno virtual**
+
+```bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
+```
+
+3. **Instalar dependencias**
+
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configurar base de datos**
+
+```bash
+cd fines_heat_map
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+5. **Ejecutar servidor**
+
+```bash
+python manage.py runserver
+```
+
+6. **Acceder a la aplicación**
+
+- **Mapa Principal**: http://127.0.0.1:8000/mapa/
+- **Panel Admin**: http://127.0.0.1:8000/admin/
 
 ### Requisitos previos
 
