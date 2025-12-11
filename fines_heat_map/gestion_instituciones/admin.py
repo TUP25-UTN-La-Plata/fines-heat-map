@@ -18,7 +18,7 @@ class AuditAdminMixin:
 # --- Configuración de Modelos ---
 
 @admin.register(Partido)
-class PartidoAdmin(AuditAdminMixin, ImportExportModelAdmin):
+class PartidoAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = PartidoResource
     list_display = ('nombre', 'estado', 'created_at')
     search_fields = ('nombre',)
@@ -30,7 +30,7 @@ class PartidoAdmin(AuditAdminMixin, ImportExportModelAdmin):
     )
 
 @admin.register(Localidad)
-class LocalidadAdmin(AuditAdminMixin, ImportExportModelAdmin):
+class LocalidadAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = LocalidadResource
     list_display = ('nombre', 'partido', 'codigo_postal', 'estado')
     search_fields = ('nombre', 'partido__nombre') # Necesario para autocomplete_fields en Sede
@@ -43,7 +43,7 @@ class LocalidadAdmin(AuditAdminMixin, ImportExportModelAdmin):
     )
 
 @admin.register(SedeTipo)
-class SedeTipoAdmin(AuditAdminMixin, ImportExportModelAdmin):
+class SedeTipoAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = SedeTipoResource
     list_display = ('nombre', 'descripcion_corta', 'estado')
     search_fields = ('nombre',) # Necesario para autocomplete
@@ -58,7 +58,7 @@ class SedeTipoAdmin(AuditAdminMixin, ImportExportModelAdmin):
     )
 
 @admin.register(Sede)
-class SedeAdmin(AuditAdminMixin, ImportExportModelAdmin):
+class SedeAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = SedeResource
     # Columnas limpias para evitar el __str__ largo
     list_display = ('nombre', 'sede_tipo', 'localidad', 'direccion', 'estado')
