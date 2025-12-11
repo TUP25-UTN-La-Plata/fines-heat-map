@@ -148,4 +148,3 @@ def buscar_sedes_por_nombre(request):
     serializer = SedeCompletaSerializer(sedes, many=True)
     
     return JsonResponse(serializer.data, safe=False)
-    return render(request, "home.html", context)
