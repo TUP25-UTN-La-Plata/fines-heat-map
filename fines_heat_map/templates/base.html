@@ -16,7 +16,7 @@
     
     <!-- CSS para navbar móvil -->
     <style>
-        /* Asegurar que el menú móvil sea visible */
+        /* Asegurar que el menú móvil sea visible y por encima de todo */
         @media (max-width: 767px) {
             [data-mobile-menu]:not(.hidden) {
                 display: flex !important;
@@ -27,7 +27,7 @@
                 right: 0;
                 background-color: #2563eb; /* blue-600 */
                 box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                z-index: 50;
+                z-index: 99999999;
             }
             
             [data-mobile-menu].hidden {
@@ -96,10 +96,9 @@
             });
         }
         
-        // 2. NAVBAR MOBILE MENU ONLY (dropdowns generales movidos a páginas específicas)
-        document.addEventListener('click', function(e) {
-            // Solo manejar menú móvil aquí
-            if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+        // 2. CLOSE MENU ON OUTSIDE CLICK
+        document.addEventListener('click', function (e) {
+            if (mainMenu && !mainMenu.classList.contains('hidden')) {
                 if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
                     mainMenu.classList.add('hidden');
                     menuToggle.setAttribute('aria-expanded', 'false');
@@ -107,7 +106,77 @@
             }
         });
         
-        // 3. RESPONSIVE BEHAVIOR
+        // 3. ESC KEY SUPPORT FOR MOBILE MENU
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                    mainMenu.classList.add('hidden');
+                    if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        
+        // 2. DROPDOWN SYSTEM GENERAL - DESACTIVADO TEMPORALMENTE PARA HOME.HTML
+        /*
+        document.addEventListener('click', function(e) {
+            // Manejar clicks en botones dropdown
+            const dropdownToggle = e.target.closest('[data-dropdown-toggle]');
+            
+            if (dropdownToggle) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetId = dropdownToggle.getAttribute('data-dropdown-toggle');
+                const dropdown = document.getElementById(targetId);
+                
+                if (dropdown) {
+                    const isHidden = dropdown.classList.contains('hidden');
+                    
+                    // Cerrar todos los dropdowns antes de abrir el nuevo
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.add('hidden');
+                    });
+                    document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                        toggle.classList.remove('active');
+                    });
+                    
+                    // Si estaba cerrado, abrirlo
+                    if (isHidden) {
+                        dropdown.classList.remove('hidden');
+                        dropdownToggle.classList.add('active');
+                    }
+                }
+            } 
+            // Cerrar dropdowns si se hace clic fuera
+            else if (!e.target.closest('.dropdown-menu')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+                document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                    toggle.classList.remove('active');
+                });
+            }
+            
+            // 3. NAVBAR MOBILE MENU
+            if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
+                    mainMenu.classList.add('hidden');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        */
+        
+        // 4. RESPONSIVE BEHAVIOR
+        document.addEventListener('click', function(e) {
+            // Solo manejar menú móvil aquí  
+            if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
+                    mainMenu.classList.add('hidden');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
         window.addEventListener('resize', function () {
             if (window.innerWidth >= 768) {
                 if (mainMenu) {
@@ -126,7 +195,7 @@
             }
         });
         
-        // 4. MODAL DE FILTROS MÓVILES (place_list.html)
+        // 5. MODAL DE FILTROS MÓVILES (place_list.html)
         const mobileFiltersBtn = document.querySelector('[data-mobile-filters-toggle]');
         const mobileFiltersModal = document.querySelector('[data-mobile-filters-modal]');
         const closeMobileFilters = document.querySelector('[data-close-mobile-filters]');
@@ -155,7 +224,7 @@
             });
         }
         
-        // 5. MANEJO DE RADIO BUTTONS EN DROPDOWNS
+        // 6. MANEJO DE RADIO BUTTONS EN DROPDOWNS
         document.addEventListener('change', function(e) {
             if (e.target.type === 'radio' && e.target.closest('.dropdown-menu')) {
                 const radio = e.target;
