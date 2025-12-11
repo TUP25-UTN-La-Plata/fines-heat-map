@@ -13,12 +13,40 @@
     <!-- Leaflet Markercluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    
+    <!-- CSS para navbar móvil -->
+    <style>
+        /* Asegurar que el menú móvil sea visible y por encima de todo */
+        @media (max-width: 767px) {
+            [data-mobile-menu]:not(.hidden) {
+                display: flex !important;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: #2563eb; /* blue-600 */
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                z-index: 99999999;
+            }
+            
+            [data-mobile-menu].hidden {
+                display: none !important;
+            }
+        }
+        
+        /* Estilos para dropdowns activos */
+        [data-dropdown-toggle].active {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    
     {% block head_extra %}{% endblock head_extra %}
 </head>
 
 <body class="grid grid-rows-[auto_1fr_auto] h-screen font-sans antialiased text-gray-900 bg-gray-50">
     {% include "includes/navbar.html" %}
-    <main role="main" class="overflow-hidden {% block main_classes %}container mx-auto px-4 py-8{% endblock %}">
+    <main role="main" class="{% block main_classes %}container mx-auto px-2 lg:px-4 py-4 lg:py-8 overflow-auto{% endblock %}">
         <!-- Django Messages -->
         {% if messages %}
         <div aria-live="polite" class="mb-4 space-y-2">
@@ -43,6 +71,232 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <!-- Leaflet Heat JS -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- JavaScript centralizado para todos los dropdowns y menús -->
+    <script>
+    // Event delegation para evitar problemas de CSP
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. NAVBAR MOBILE MENU
+        const menuToggle = document.querySelector('[data-mobile-menu-toggle]');
+        const mainMenu = document.querySelector('[data-mobile-menu]');
+        
+        if (menuToggle && mainMenu) {
+            menuToggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                
+                if (isExpanded) {
+                    mainMenu.classList.add('hidden');
+                } else {
+                    mainMenu.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // 2. CLOSE MENU ON OUTSIDE CLICK
+        document.addEventListener('click', function (e) {
+            if (mainMenu && !mainMenu.classList.contains('hidden')) {
+                if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
+                    mainMenu.classList.add('hidden');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        
+        // 3. ESC KEY SUPPORT FOR MOBILE MENU
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                    mainMenu.classList.add('hidden');
+                    if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        
+        // 2. DROPDOWN SYSTEM GENERAL - DESACTIVADO TEMPORALMENTE PARA HOME.HTML
+        /*
+        document.addEventListener('click', function(e) {
+            // Manejar clicks en botones dropdown
+            const dropdownToggle = e.target.closest('[data-dropdown-toggle]');
+            
+            if (dropdownToggle) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetId = dropdownToggle.getAttribute('data-dropdown-toggle');
+                const dropdown = document.getElementById(targetId);
+                
+                if (dropdown) {
+                    const isHidden = dropdown.classList.contains('hidden');
+                    
+                    // Cerrar todos los dropdowns antes de abrir el nuevo
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.add('hidden');
+                    });
+                    document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                        toggle.classList.remove('active');
+                    });
+                    
+                    // Si estaba cerrado, abrirlo
+                    if (isHidden) {
+                        dropdown.classList.remove('hidden');
+                        dropdownToggle.classList.add('active');
+                    }
+                }
+            } 
+            // Cerrar dropdowns si se hace clic fuera
+            else if (!e.target.closest('.dropdown-menu')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+                document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                    toggle.classList.remove('active');
+                });
+            }
+            
+            // 3. NAVBAR MOBILE MENU
+            if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
+                    mainMenu.classList.add('hidden');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        */
+        
+        // 4. RESPONSIVE BEHAVIOR
+        document.addEventListener('click', function(e) {
+            // Solo manejar menú móvil aquí  
+            if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                if (menuToggle && !menuToggle.contains(e.target) && !mainMenu.contains(e.target)) {
+                    mainMenu.classList.add('hidden');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        window.addEventListener('resize', function () {
+            if (window.innerWidth >= 768) {
+                if (mainMenu) {
+                    mainMenu.classList.remove('hidden');
+                }
+                if (menuToggle) {
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            } else {
+                if (mainMenu && menuToggle) {
+                    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+                    if (!isExpanded) {
+                        mainMenu.classList.add('hidden');
+                    }
+                }
+            }
+        });
+        
+        // 5. MODAL DE FILTROS MÓVILES (place_list.html)
+        const mobileFiltersBtn = document.querySelector('[data-mobile-filters-toggle]');
+        const mobileFiltersModal = document.querySelector('[data-mobile-filters-modal]');
+        const closeMobileFilters = document.querySelector('[data-close-mobile-filters]');
+        
+        if (mobileFiltersBtn && mobileFiltersModal) {
+            mobileFiltersBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileFiltersModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+        
+        if (closeMobileFilters && mobileFiltersModal) {
+            closeMobileFilters.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileFiltersModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Cerrar modal al hacer clic en el backdrop
+            mobileFiltersModal.addEventListener('click', function(e) {
+                if (e.target === mobileFiltersModal) {
+                    mobileFiltersModal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+        
+        // 6. MANEJO DE RADIO BUTTONS EN DROPDOWNS
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' && e.target.closest('.dropdown-menu')) {
+                const radio = e.target;
+                const dropdown = radio.closest('.dropdown-menu');
+                const toggle = document.querySelector(`[data-dropdown-toggle="${dropdown.id}"]`);
+                
+                if (toggle) {
+                    // Encontrar el span de la etiqueta
+                    const labelSpan = toggle.querySelector('span[id$="-label"]');
+                    if (labelSpan) {
+                        const filterValue = radio.value;
+                        if (filterValue === '') {
+                            // Opción "Todos"
+                            const filterType = radio.name.replace('-quick', '');
+                            labelSpan.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                            toggle.classList.remove('active');
+                        } else {
+                            // Opción específica
+                            const optionText = radio.nextElementSibling.textContent.trim();
+                            labelSpan.textContent = optionText;
+                            toggle.classList.add('active');
+                        }
+                    }
+                    
+                    // Actualizar campo hidden del formulario si existe
+                    const filterType = radio.name.replace('-quick', '');
+                    const hiddenField = document.getElementById(`quick-${filterType}`);
+                    if (hiddenField) {
+                        hiddenField.value = radio.value;
+                    }
+                    
+                    // Cerrar el dropdown
+                    dropdown.classList.add('hidden');
+                    toggle.classList.remove('active');
+                    
+                    // Enviar formulario automáticamente si existe
+                    const searchForm = document.getElementById('search-form');
+                    if (searchForm) {
+                        searchForm.submit();
+                    }
+                }
+            }
+        });
+        
+        // 6. ESC KEY SUPPORT
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Cerrar modal de filtros móviles
+                if (mobileFiltersModal && !mobileFiltersModal.classList.contains('hidden')) {
+                    mobileFiltersModal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+                
+                // Cerrar menú móvil
+                if (mainMenu && !mainMenu.classList.contains('hidden') && window.innerWidth < 768) {
+                    mainMenu.classList.add('hidden');
+                    if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
+                }
+                
+                // Cerrar todos los dropdowns
+                document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                    const targetId = toggle.getAttribute('data-dropdown-toggle');
+                    const dropdown = document.getElementById(targetId);
+                    if (dropdown && !dropdown.classList.contains('hidden')) {
+                        dropdown.classList.add('hidden');
+                        toggle.classList.remove('active');
+                    }
+                });
+            }
+        });
+    });
+    </script>
 
     {% block scripts_extra %}{% endblock scripts_extra %}
 </body>

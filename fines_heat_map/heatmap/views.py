@@ -80,7 +80,7 @@ def mapa(request):
         "show_heatmap": show_heatmap,
         "map_config": settings.MAP_CONFIG,
     }
-    return render(request, "heatmap/mapa.html", context)
+    return render(request, "home.html", context)
 
 
 def get_sedes_data(request):
@@ -94,3 +94,4 @@ def get_sedes_data(request):
     serializer = SedeCompletaSerializer(sedes, many=True)
 
     return JsonResponse(serializer.data, safe=False)
+    return render(request, "home.html", context)

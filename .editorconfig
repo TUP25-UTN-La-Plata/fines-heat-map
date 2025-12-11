@@ -1,0 +1,7 @@
+# EditorConfig
+root = true
+
+[**/templates/heatmap/mapa.html]
+# Desactivar cualquier formateo automático
+trim_trailing_whitespace = false
+insert_final_newline = false
