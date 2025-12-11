@@ -1,5 +1,7 @@
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 from .models import Orientacion, Modulo, Comision
+from .resources import OrientacionResource, ModuloResource, ComisionResource
 
 # Reutilizamos el Mixin de auditoría (copialo aquí para no complicar imports entre apps)
 class AuditAdminMixin:
@@ -12,7 +14,8 @@ class AuditAdminMixin:
     estado.short_description = "Estado"
 
 @admin.register(Orientacion)
-class OrientacionAdmin(AuditAdminMixin, admin.ModelAdmin):
+class OrientacionAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = OrientacionResource
     list_display = ('nombre', 'descripcion', 'estado')
     search_fields = ('nombre',)
     fieldsets = (
@@ -21,7 +24,8 @@ class OrientacionAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
 
 @admin.register(Modulo)
-class ModuloAdmin(AuditAdminMixin, admin.ModelAdmin):
+class ModuloAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = ModuloResource
     list_display = ('nombre', 'descripcion', 'estado')
     search_fields = ('nombre',)
     fieldsets = (
@@ -30,9 +34,10 @@ class ModuloAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
 
 @admin.register(Comision)
-class ComisionAdmin(AuditAdminMixin, admin.ModelAdmin):
+class ComisionAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = ComisionResource
     list_display = ('numero', 'sede', 'orientacion', 'modulo', 'turno', 'estado')
-    list_filter = ('turno', 'modulo', 'orientacion', 'sede__localidad__partido') # Filtros potentes
+    list_filter = ('turno', 'modulo', 'orientacion', 'sede__localidad__partido')
     search_fields = ('numero', 'sede__nombre', 'tutor')
     
     # ¡IMPORTANTE! Esto activa el buscador de sedes dentro de la comisión
