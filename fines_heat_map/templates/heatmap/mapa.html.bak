@@ -410,51 +410,51 @@
         const dropdownMenus = document.querySelectorAll('.dropdown-menu');
 
         // Parámetros para centrar el mapa (desde Django)
-        const centerLat = parseFloat('{{ center_lat|default:"-34.6037" }}');
-        const centerLng = parseFloat('{{ center_lng|default:"-58.3816" }}');
-        const zoomLevel = parseInt('{{ zoom_level|default:"10" }}');
-        const placeName = '{{ place_name|default:""|escapejs }}' || null;
+        const centerLat = {% if center_lat %}{{ center_lat }}{% else %}{{ map_config.default_center.0 }}{% endif %};
+    const centerLng = {% if center_lng %}{ { center_lng } } {% else %} { { map_config.default_center.1 } } {% endif %};
+    const zoomLevel = {% if zoom_level %}{ { zoom_level } } {% else %} { { map_config.default_zoom } } {% endif %};
+    const placeName = '{% if place_name %}{{ place_name|escapejs }}{% else %}{% endif %}';
 
-        // Toggle del panel de filtros
-        if (filtersToggle) {
-            filtersToggle.addEventListener('click', function () {
-                filterPanel.classList.toggle('show');
-            });
+    // Toggle del panel de filtros
+    if (filtersToggle) {
+        filtersToggle.addEventListener('click', function () {
+            filterPanel.classList.toggle('show');
+        });
+    }
+
+    // Cerrar panel al hacer click fuera
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.search-container')) {
+            filterPanel.classList.remove('show');
         }
 
-        // Cerrar panel al hacer click fuera
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-container')) {
-                filterPanel.classList.remove('show');
-            }
+        // Cerrar dropdowns al hacer click fuera
+        if (!e.target.closest('.filter-dropdown')) {
+            dropdownMenus.forEach(menu => menu.classList.remove('show'));
+        }
+    });
 
-            // Cerrar dropdowns al hacer click fuera
-            if (!e.target.closest('.filter-dropdown')) {
-                dropdownMenus.forEach(menu => menu.classList.remove('show'));
-            }
-        });
+    // Manejo de dropdowns
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const filterType = this.dataset.filter;
+            const dropdown = document.getElementById(filterType + '-dropdown');
 
-        // Manejo de dropdowns
-        dropdownToggles.forEach(toggle => {
-            toggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const filterType = this.dataset.filter;
-                const dropdown = document.getElementById(filterType + '-dropdown');
-
-                // Cerrar otros dropdowns
-                dropdownMenus.forEach(menu => {
-                    if (menu !== dropdown) {
-                        menu.classList.remove('show');
-                    }
-                });
-
-                // Toggle el dropdown actual
-                dropdown.classList.toggle('show');
+            // Cerrar otros dropdowns
+            dropdownMenus.forEach(menu => {
+                if (menu !== dropdown) {
+                    menu.classList.remove('show');
+                }
             });
-        });
 
-        // Manejo de selección en dropdowns
-        document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
+            // Toggle el dropdown actual
+            dropdown.classList.toggle('show');
+        });
+    });
+
+    // Manejo de selección en dropdowns
+    document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', function () {
             const filterType = this.name.replace('-quick', '');
             const filterValue = this.value;
@@ -492,8 +492,8 @@
         });
     });
 
-        // Reset todos los filtros
-        if (resetAllBtn) {
+    // Reset todos los filtros
+    if (resetAllBtn) {
         resetAllBtn.addEventListener('click', function () {
             // Limpiar formulario y campos hidden
             searchForm.querySelectorAll('input, select').forEach(field => {
@@ -531,8 +531,8 @@
         });
     }
 
-        // Limpiar filtros del panel avanzado
-        if (clearFiltersBtn) {
+    // Limpiar filtros del panel avanzado
+    if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function () {
             if (resetAllBtn) {
                 resetAllBtn.click(); // Usar la misma lógica
@@ -540,18 +540,18 @@
         });
     }
 
-        // Envío del formulario con Enter en búsqueda
-        document.getElementById('main-search').addEventListener('keypress', function (e) {
+    // Envío del formulario con Enter en búsqueda
+    document.getElementById('main-search').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             searchForm.submit();
         }
     });
 
-        // Si hay parámetros específicos, centrar el mapa
-        const defaultLat = -34.6037;
-        const defaultLng = -58.3816;
-        if (centerLat !== defaultLat || centerLng !== defaultLng) {
+    // Si hay parámetros específicos, centrar el mapa
+    const defaultLat = {% if map_config.default_center.0 %}{ { map_config.default_center.0 } } {% else %} -34.6037{% endif %};
+    const defaultLng = {% if map_config.default_center.1 %}{ { map_config.default_center.1 } } {% else %} -58.3816{% endif %};
+    if (centerLat !== defaultLat || centerLng !== defaultLng) {
         // Esperar a que el mapa esté inicializado
         setTimeout(() => {
             if (typeof map !== 'undefined') {
@@ -576,22 +576,23 @@
         }, 1000);
     }
 
-        // Sincronizar estado del checkbox con la variable global heatmapActive en map_scripts.js
-        if (typeof setHeatmapState === 'function') {
-            heatmapToggle.addEventListener('change', function () {
-                setHeatmapState(this.checked);
-            });
+    // Sincronizar estado del checkbox con la variable global heatmapActive en map_scripts.js
+    if (typeof setHeatmapState === 'function') {
+        heatmapToggle.addEventListener('change', function () {
+            setHeatmapState(this.checked);
+        });
 
-            // Configurar estado inicial del heatmap basado en el checkbox
-            if (heatmapToggle.checked) {
-                setHeatmapState(true);
-            }
-        } else {
-            console.warn('La función setHeatmapState no está disponible. Asegurate de que map_scripts.html se cargue correctamente.');
-        }
+        // Configurar estado inicial del heatmap
+        {% if show_heatmap %}
+        heatmapToggle.checked = true;
+        setHeatmapState(true);
+        {% endif %}
+    } else {
+        console.warn('La función setHeatmapState no está disponible. Asegurate de que map_scripts.html se cargue correctamente.');
+    }
 
-        // Cargar los places y añadirlos al mapa si existen
-        var placesData = [];
+    // Cargar los places y añadirlos al mapa si existen
+    var placesData = [];
     try {
         const placesElement = document.getElementById('places-data');
         if (placesElement && placesElement.textContent) {
@@ -607,33 +608,32 @@
         console.log('No hay lugares para mostrar en el mapa.');
     }
 
-        // Inicializar dropdowns con valores actuales de la URL
-        const currentParams = new URLSearchParams(window.location.search);
+    // Inicializar dropdowns con valores actuales de la URL
+    const currentParams = new URLSearchParams(window.location.search);
 
-        // Para cada tipo de filtro dropdown, seleccionar el radio button correspondiente
-        ['turno', 'modules', 'orientation'].forEach(filterType => {
-            const paramValue = currentParams.get(filterType) || '';
+    // Para cada tipo de filtro dropdown, seleccionar el radio button correspondiente
+    ['turno', 'modules', 'orientation'].forEach(filterType => {
+        const paramValue = currentParams.get(filterType) || '';
 
-            // Encontrar y marcar el radio button correcto
-            const radioButton = document.querySelector(`input[name="${filterType}-quick"][value="${paramValue}"]`);
-            if (radioButton) {
-                radioButton.checked = true;
+        // Encontrar y marcar el radio button correcto
+        const radioButton = document.querySelector(`input[name="${filterType}-quick"][value="${paramValue}"]`);
+        if (radioButton) {
+            radioButton.checked = true;
 
-                // Actualizar el texto del botón del dropdown
-                const label = document.getElementById(filterType + '-label');
-                const dropdown = radioButton.closest('.dropdown-menu');
-                const toggle = dropdown.previousElementSibling;
+            // Actualizar el texto del botón del dropdown
+            const label = document.getElementById(filterType + '-label');
+            const dropdown = radioButton.closest('.dropdown-menu');
+            const toggle = dropdown.previousElementSibling;
 
-                if (paramValue === '') {
-                    label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
-                    toggle.classList.remove('active');
-                } else {
-                    const optionText = radioButton.nextElementSibling.textContent.trim();
-                    label.textContent = optionText;
-                    toggle.classList.add('active');
-                }
+            if (paramValue === '') {
+                label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                toggle.classList.remove('active');
+            } else {
+                const optionText = radioButton.nextElementSibling.textContent.trim();
+                label.textContent = optionText;
+                toggle.classList.add('active');
             }
-        });
+        }
     });
 </script>
 
