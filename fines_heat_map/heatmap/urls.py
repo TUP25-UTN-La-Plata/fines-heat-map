@@ -16,9 +16,10 @@ Including another URLconf
 """
 
 from django.urls import path
-from .views import mapa, get_sedes_data
+from .views import buscar_sedes_por_nombre, mapa, get_sedes_data
 
 urlpatterns = [
     path("", mapa, name="mapa"),
     path("api/sedes/", get_sedes_data, name="get_sedes_data"),
+    path("api/sedes/buscar/", buscar_sedes_por_nombre, name="buscar_sedes_por_nombre"),
 ]

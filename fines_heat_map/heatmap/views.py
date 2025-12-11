@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import render
 from django.conf import settings
 from .forms import MapFilterForm
@@ -85,13 +86,66 @@ def mapa(request):
 
 def get_sedes_data(request):
     # Endpoint para obtener los datos de las sedes con filtros de turno, orientación y módulo.
+
+     # Obtener parámetros de query (solo IDs y letra de turno)
+    modulo_id = request.GET.get('moduloID')
+    turno = request.GET.get('turno')  # 'M', 'T', 'V', 'N'
+    orientacion_id = request.GET.get('orientacionID')
+
     sedes = (
         Sede.objects.filter(deleted_at=None)
         .select_related('localidad', 'localidad__partido', 'sede_tipo')
         .prefetch_related('comisiones', 'comisiones__orientacion', 'comisiones__modulo')
     )
 
+    # Aplicar filtros solo si hay parámetros
+    # Si alguna comisión de la sede cumple los criterios, traemos la sede completa
+    if modulo_id or turno or orientacion_id:
+        filters = Q(comisiones__deleted_at=None)  # Solo comisiones activas
+        
+        if modulo_id:
+            try:
+                filters &= Q(comisiones__modulo_id=int(modulo_id))
+            except (ValueError, TypeError):
+                pass
+        
+        if turno:
+            # Validar que sea una letra válida
+            if turno in ['M', 'T', 'V', 'N']:
+                filters &= Q(comisiones__turno=turno)
+        
+        if orientacion_id:
+            try:
+                filters &= Q(comisiones__orientacion_id=int(orientacion_id))
+            except (ValueError, TypeError):
+                pass
+        
+        # Filtrar sedes que tengan al menos una comisión que cumpla los criterios
+        sedes = sedes.filter(filters).distinct()
+
     serializer = SedeCompletaSerializer(sedes, many=True)
 
+    return JsonResponse(serializer.data, safe=False)
+
+
+def buscar_sedes_por_nombre(request):
+    # Endpoint para buscar sedes por nombre (búsqueda parcial, case-insensitive)
+    nombre = request.GET.get('nombre', '').strip()
+    
+    if not nombre:
+        return JsonResponse({'error': 'El parámetro "nombre" es requerido'}, status=400)
+    
+    # Búsqueda case-insensitive que contiene el término
+    sedes = (
+        Sede.objects.filter(
+            deleted_at=None,
+            nombre__icontains=nombre
+        )
+        .select_related('localidad', 'localidad__partido', 'sede_tipo')
+        .prefetch_related('comisiones', 'comisiones__orientacion', 'comisiones__modulo')
+    )
+    
+    serializer = SedeCompletaSerializer(sedes, many=True)
+    
     return JsonResponse(serializer.data, safe=False)
     return render(request, "home.html", context)
