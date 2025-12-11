@@ -1,5 +1,7 @@
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 from .models import Partido, Localidad, SedeTipo, Sede
+from .resources import PartidoResource, LocalidadResource, SedeTipoResource, SedeResource
 
 # --- Mixin para manejo de Auditoría ---
 class AuditAdminMixin:
@@ -16,7 +18,8 @@ class AuditAdminMixin:
 # --- Configuración de Modelos ---
 
 @admin.register(Partido)
-class PartidoAdmin(AuditAdminMixin, admin.ModelAdmin):
+class PartidoAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = PartidoResource
     list_display = ('nombre', 'estado', 'created_at')
     search_fields = ('nombre',)
     list_filter = ('created_at',)
@@ -27,7 +30,8 @@ class PartidoAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
 
 @admin.register(Localidad)
-class LocalidadAdmin(AuditAdminMixin, admin.ModelAdmin):
+class LocalidadAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = LocalidadResource
     list_display = ('nombre', 'partido', 'codigo_postal', 'estado')
     search_fields = ('nombre', 'partido__nombre') # Necesario para autocomplete_fields en Sede
     list_filter = ('partido', 'created_at') # Ojo: si hay muchos partidos, esto puede ser lento
@@ -39,7 +43,8 @@ class LocalidadAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
 
 @admin.register(SedeTipo)
-class SedeTipoAdmin(AuditAdminMixin, admin.ModelAdmin):
+class SedeTipoAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = SedeTipoResource
     list_display = ('nombre', 'descripcion_corta', 'estado')
     search_fields = ('nombre',) # Necesario para autocomplete
 
@@ -53,7 +58,8 @@ class SedeTipoAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
 
 @admin.register(Sede)
-class SedeAdmin(AuditAdminMixin, admin.ModelAdmin):
+class SedeAdmin(ImportExportModelAdmin, AuditAdminMixin):
+    resource_class = SedeResource
     # Columnas limpias para evitar el __str__ largo
     list_display = ('nombre', 'sede_tipo', 'localidad', 'direccion', 'estado')
     
