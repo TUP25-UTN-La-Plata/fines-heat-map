@@ -2,63 +2,49 @@
 <!-- beautify ignore:start -->
 {% extends "base.html" %}
 {% block title %}Mapa de Sedes - FinEs Mapa Interactivo{% endblock title %}
-{% block main_classes %}{% endblock %}
+{% block main_classes %}overflow-hidden{% endblock %}
 {% block head_extra %}
 <style>
     #map {
         height: 100vh;
         width: 100%;
+        position: relative;
     }
 
     /* Controles flotantes */
     .map-controls {
         position: absolute;
         top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 20px;
+        right: 20px;
         z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        align-items: center;
+        pointer-events: none;
     }
 
+    .map-controls>* {
+        pointer-events: auto;
+    }
+
+    /* Search box principal */
     .search-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        overflow: hidden;
-        min-width: 400px;
-    }
-
-    .filter-panel {
         background: white;
         border-radius: 8px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        padding: 16px;
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transition: all 0.3s ease;
-        min-width: 400px;
+        margin-bottom: 16px;
+        max-width: 400px;
     }
 
-    .filter-panel.show {
-        max-height: 500px;
-        opacity: 1;
-    }
-
+    /* Botones de filtro */
     .filter-buttons {
         display: flex;
-        gap: 8px;
-        align-items: center;
         flex-wrap: wrap;
-        justify-content: center;
+        gap: 8px;
+        margin-bottom: 16px;
     }
 
     .filter-btn {
         background: white;
-        border: 1px solid #d1d5db;
+        border: 1px solid #e5e7eb;
         border-radius: 20px;
         padding: 8px 16px;
         font-size: 14px;
@@ -99,59 +85,71 @@
         display: inline-block;
     }
 
-    /* Dropdown menus */
+    /* Dropdown menus - CSS más específico para sobrescribir Tailwind */
     .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        min-width: 200px;
-        padding: 8px;
-        z-index: 1001;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-8px);
-        transition: all 0.2s ease;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        background: white !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+        min-width: 200px !important;
+        padding: 8px !important;
+        z-index: 9999 !important;
+        display: block !important;
     }
 
-    .dropdown-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
+    .dropdown-menu.hidden {
+        display: none !important;
     }
 
     .dropdown-option {
         display: flex;
         align-items: center;
         padding: 8px 12px;
-        margin: 2px 0;
-        border-radius: 6px;
         cursor: pointer;
-        transition: background-color 0.2s;
+        border-radius: 6px;
+        transition: background-color 0.15s;
         font-size: 14px;
         gap: 8px;
     }
 
     .dropdown-option:hover {
-        background-color: #f3f4f6;
+        background: #f3f4f6;
     }
 
     .dropdown-option input[type="radio"] {
         margin: 0;
-        width: 16px;
-        height: 16px;
+        accent-color: #3b82f6;
     }
 
     .dropdown-option span {
         flex: 1;
     }
 
-    .dropdown-option input[type="radio"]:checked + span {
-        font-weight: 500;
-        color: #3b82f6;
+    /* Panel de filtros expandible */
+    .filter-panel {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 16px;
+        transform: translateY(-8px);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .filter-panel.show {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
     }
 
     /* Controles del mapa de calor */
@@ -195,6 +193,7 @@
         }
     }
 
+    /* Animaciones */
     .fade-in {
         animation: fadeIn 0.3s ease-in-out;
     }
@@ -204,6 +203,7 @@
             opacity: 0;
             transform: translateY(-10px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -224,7 +224,7 @@
         <!-- Búsqueda principal -->
         <div class="search-container fade-in">
             <form method="get" id="search-form" class="flex">
-                <input type="text" name="search" id="main-search" value="{{ request.GET.search|default:'' }}"
+                <input type="text" name="search" id="main-search" value="{{ form.search.value|default:'' }}"
                     placeholder="Buscar instituciones, tutores o comisiones..."
                     class="flex-1 px-4 py-3 border-none rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="button" id="filters-toggle"
@@ -235,47 +235,28 @@
                         </path>
                     </svg>
                 </button>
-                
+
                 <!-- Campos hidden para sincronizar con dropdowns rápidos -->
-                <input type="hidden" id="quick-turno" name="turno" value="{{ request.GET.turno|default:'' }}">
-                <input type="hidden" id="quick-modules" name="modules" value="{{ request.GET.modules|default:'' }}">
-                <input type="hidden" id="quick-orientation" name="orientation" value="{{ request.GET.orientation|default:'' }}">
+                <input type="hidden" id="quick-turno" name="turno" value="{{ form.turno.value|default:'' }}">
+                <input type="hidden" id="quick-modules" name="modules" value="{{ form.modules.value|default:'' }}">
+                <input type="hidden" id="quick-orientation" name="orientation"
+                    value="{{ form.orientation.value|default:'' }}">
             </form>
 
             <!-- Panel de filtros expandible -->
             <div id="filter-panel" class="filter-panel">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Turno</label>
-                        <select name="turno" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">Todos</option>
-                            <option value="mañana" {% if request.GET.turno == "mañana" %}selected{% endif %}>Mañana</option>
-                            <option value="tarde" {% if request.GET.turno == "tarde" %}selected{% endif %}>Tarde</option>
-                            <option value="noche" {% if request.GET.turno == "noche" %}selected{% endif %}>Noche</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.turno.label }}</label>
+                        {{ form.turno }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Módulos</label>
-                        <select name="modules" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">Todos</option>
-                            <option value="Matemática" {% if request.GET.modules == "Matemática" %}selected{% endif %}>Matemática</option>
-                            <option value="Lengua" {% if request.GET.modules == "Lengua" %}selected{% endif %}>Lengua</option>
-                            <option value="Historia" {% if request.GET.modules == "Historia" %}selected{% endif %}>Historia</option>
-                            <option value="Biología" {% if request.GET.modules == "Biología" %}selected{% endif %}>Biología</option>
-                            <option value="Química" {% if request.GET.modules == "Química" %}selected{% endif %}>Química</option>
-                            <option value="Física" {% if request.GET.modules == "Física" %}selected{% endif %}>Física</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.modules.label }}</label>
+                        {{ form.modules }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Orientación</label>
-                        <select name="orientation" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">Todas</option>
-                            <option value="Ciencias Sociales" {% if request.GET.orientation == "Ciencias Sociales" %}selected{% endif %}>Ciencias Sociales</option>
-                            <option value="Ciencias Naturales" {% if request.GET.orientation == "Ciencias Naturales" %}selected{% endif %}>Ciencias Naturales</option>
-                            <option value="Técnica" {% if request.GET.orientation == "Técnica" %}selected{% endif %}>Técnica</option>
-                            <option value="Economía" {% if request.GET.orientation == "Economía" %}selected{% endif %}>Economía</option>
-                            <option value="Arte" {% if request.GET.orientation == "Arte" %}selected{% endif %}>Arte</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.orientation.label }}</label>
+                        {{ form.orientation }}
                     </div>
                 </div>
                 <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
@@ -293,11 +274,18 @@
 
         <!-- Botones de filtros rápidos -->
         <div class="filter-buttons">
+            <!-- Botón para filtros móviles -->
+            <button data-mobile-map-filters-toggle class="md:hidden px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-3">
+                🎛️ Filtros del Mapa
+            </button>
+            
+            <!-- Filtros de escritorio -->
+            <div class="hidden md:flex flex-wrap gap-2">
             <div class="filter-dropdown">
-                <button type="button" class="filter-btn dropdown-toggle" data-filter="turno">
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="turno-dropdown">
                     🕐 <span id="turno-label">Turno</span> ▼
                 </button>
-                <div class="dropdown-menu" id="turno-dropdown">
+                <div class="dropdown-menu hidden" id="turno-dropdown">
                     <label class="dropdown-option">
                         <input type="radio" name="turno-quick" value="" checked>
                         <span>Todos los turnos</span>
@@ -318,10 +306,10 @@
             </div>
 
             <div class="filter-dropdown">
-                <button type="button" class="filter-btn dropdown-toggle" data-filter="modules">
-                    📚 <span id="modules-label">Módulo</span> ▼
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="modules-dropdown">
+                    📚 <span id="modules-label">Módulos</span> ▼
                 </button>
-                <div class="dropdown-menu" id="modules-dropdown">
+                <div class="dropdown-menu hidden" id="modules-dropdown">
                     <label class="dropdown-option">
                         <input type="radio" name="modules-quick" value="" checked>
                         <span>Todos los módulos</span>
@@ -354,10 +342,10 @@
             </div>
 
             <div class="filter-dropdown">
-                <button type="button" class="filter-btn dropdown-toggle" data-filter="orientation">
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="orientation-dropdown">
                     🎓 <span id="orientation-label">Orientación</span> ▼
                 </button>
-                <div class="dropdown-menu" id="orientation-dropdown">
+                <div class="dropdown-menu hidden" id="orientation-dropdown">
                     <label class="dropdown-option">
                         <input type="radio" name="orientation-quick" value="" checked>
                         <span>Todas las orientaciones</span>
@@ -388,6 +376,78 @@
             <button type="button" class="filter-btn reset-btn" id="reset-all-filters">
                 🔄 Limpiar
             </button>
+            </div> <!-- Cierre de filtros de escritorio -->
+        </div>
+    </div>
+
+    <!-- Modal de filtros para móvil -->
+    <div data-mobile-map-filters-modal class="md:hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden" style="z-index: 99999 !important;">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white" style="z-index: 100000 !important;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Filtros</h3>
+                <button data-close-mobile-map-filters class="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Filtro de Turno -->
+                <div>
+                    <label for="mobile-turno" class="block text-sm font-medium text-gray-700 mb-1">
+                        Turno
+                    </label>
+                    <select name="mobile-turno" id="mobile-turno"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">Todos los turnos</option>
+                        <option value="Mañana">Mañana</option>
+                        <option value="Tarde">Tarde</option>
+                        <option value="Noche">Noche</option>
+                    </select>
+                </div>
+
+                <!-- Filtro de Módulos -->
+                <div>
+                    <label for="mobile-modules" class="block text-sm font-medium text-gray-700 mb-1">
+                        Módulos
+                    </label>
+                    <select name="mobile-modules" id="mobile-modules"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">Todos los módulos</option>
+                        <option value="1">Módulo 1</option>
+                        <option value="2">Módulo 2</option>
+                        <option value="3">Módulo 3</option>
+                    </select>
+                </div>
+
+                <!-- Filtro de Orientación -->
+                <div>
+                    <label for="mobile-orientation" class="block text-sm font-medium text-gray-700 mb-1">
+                        Orientación
+                    </label>
+                    <select name="mobile-orientation" id="mobile-orientation"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">Todas las orientaciones</option>
+                        <option value="Ciencias Sociales">Ciencias Sociales</option>
+                        <option value="Ciencias Naturales">Ciencias Naturales</option>
+                        <option value="Economía y Administración">Economía y Administración</option>
+                        <option value="Arte">Arte</option>
+                        <option value="Comunicación">Comunicación</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-2 pt-2">
+                    <button type="button" id="mobile-apply-filters" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Buscar
+                    </button>
+                    <button type="button" id="mobile-reset-filters" 
+                           class="w-full text-center px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -402,157 +462,203 @@
     </div>
 </div>
 
-<!-- JSON data for places -->
+<!-- Datos para JavaScript -->
 {{ places|json_script:"places-data" }}
-
-{% endblock content %}
+{% endblock %}
 
 {% block scripts_extra %}
 {% include "includes/map_scripts.html" %}
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // SISTEMA DE DROPDOWNS ESPECÍFICO PARA HOME
+        function handleDropdownClick(e) {
+            const clickedToggle = e.target.closest('[data-dropdown-toggle]');
+            
+            if (clickedToggle) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetId = clickedToggle.getAttribute('data-dropdown-toggle');
+                const targetDropdown = document.getElementById(targetId);
+                
+                if (targetDropdown) {
+                    const wasHidden = targetDropdown.classList.contains('hidden');
+                    
+                    // Cerrar todos los dropdowns
+                    document.querySelectorAll('.dropdown-menu').forEach(dropdown => {
+                        dropdown.classList.add('hidden');
+                    });
+                    document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                        toggle.classList.remove('active');
+                    });
+                    
+                    // Si estaba cerrado, abrirlo
+                    if (wasHidden) {
+                        targetDropdown.classList.remove('hidden');
+                        clickedToggle.classList.add('active');
+                    }
+                } else {
+                    console.error('🔧 No dropdown found with ID:', targetId);
+                }
+            } else {
+                // Cerrar dropdowns al hacer clic fuera
+                document.querySelectorAll('.dropdown-menu').forEach(dropdown => {
+                    if (!dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+                document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
+                    toggle.classList.remove('active');
+                });
+            }
+        }
+        
+        // Agregar event listeners tanto para click como touch
+        document.addEventListener('click', handleDropdownClick);
+        document.addEventListener('touchend', handleDropdownClick);
+
+        // MODAL DE FILTROS MÓVILES
+        const mobileMapFiltersBtn = document.querySelector('[data-mobile-map-filters-toggle]');
+        const mobileMapFiltersModal = document.querySelector('[data-mobile-map-filters-modal]');
+        const closeMobileMapFilters = document.querySelector('[data-close-mobile-map-filters]');
+        const mobileApplyFilters = document.getElementById('mobile-apply-filters');
+        const mobileResetFilters = document.getElementById('mobile-reset-filters');
+
+        if (mobileMapFiltersBtn && mobileMapFiltersModal) {
+            mobileMapFiltersBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                mobileMapFiltersModal.classList.remove('hidden');
+                mobileMapFiltersModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (closeMobileMapFilters && mobileMapFiltersModal) {
+            closeMobileMapFilters.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileMapFiltersModal.classList.add('hidden');
+                mobileMapFiltersModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Cerrar modal al hacer clic en el backdrop
+            mobileMapFiltersModal.addEventListener('click', function(e) {
+                if (e.target === mobileMapFiltersModal) {
+                    mobileMapFiltersModal.classList.add('hidden');
+                    mobileMapFiltersModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // Aplicar filtros móviles
+        if (mobileApplyFilters) {
+            mobileApplyFilters.addEventListener('click', function() {
+                // Sincronizar filtros móviles con los campos hidden del formulario
+                ['turno', 'modules', 'orientation'].forEach(filterType => {
+                    const mobileSelect = document.getElementById(`mobile_${filterType}`);
+                    const hiddenField = document.getElementById(`quick-${filterType}`);
+                    if (mobileSelect && hiddenField) {
+                        hiddenField.value = mobileSelect.value;
+                    }
+                });
+                
+                // Cerrar modal y enviar formulario
+                mobileMapFiltersModal.classList.add('hidden');
+                mobileMapFiltersModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                const searchForm = document.getElementById('search-form');
+                if (searchForm) {
+                    searchForm.submit();
+                }
+            });
+        }
+
+        // Reset filtros móviles
+        if (mobileResetFilters) {
+            mobileResetFilters.addEventListener('click', function() {
+                // Resetear todos los selects móviles
+                ['turno', 'modules', 'orientation'].forEach(filterType => {
+                    const mobileSelect = document.getElementById(`mobile_${filterType}`);
+                    if (mobileSelect) {
+                        mobileSelect.value = '';
+                    }
+                });
+            });
+        }
+
+        // Elementos del DOM
+        const heatmapToggle = document.getElementById('heatmap-toggle');
         const filtersToggle = document.getElementById('filters-toggle');
         const filterPanel = document.getElementById('filter-panel');
-        const searchForm = document.getElementById('search-form');
-        const heatmapToggle = document.getElementById('heatmap-toggle');
-        const resetAllBtn = document.getElementById('reset-all-filters');
         const clearFiltersBtn = document.getElementById('clear-filters');
+        const resetAllBtn = document.getElementById('reset-all-filters');
+        const searchForm = document.getElementById('search-form');
 
-        // Toggle panel de filtros avanzados
-        if (filtersToggle && filterPanel) {
+        // Parámetros para centrar el mapa (desde Django)
+        const centerLat = parseFloat('{{ center_lat|default:"-34.6037" }}');
+        const centerLng = parseFloat('{{ center_lng|default:"-58.3816" }}');
+        const zoomLevel = parseInt('{{ zoom_level|default:"10" }}');
+        const placeName = '{{ place_name|default:""|escapejs }}' || null;
+
+        // Toggle del panel de filtros
+        if (filtersToggle) {
             filtersToggle.addEventListener('click', function () {
                 filterPanel.classList.toggle('show');
             });
         }
 
-        // Cerrar dropdowns al hacer clic fuera
+        // Cerrar panel al hacer click fuera
         document.addEventListener('click', function (e) {
-            if (!e.target.closest('.filter-dropdown')) {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.classList.remove('show');
-                });
+            if (!e.target.closest('.search-container')) {
+                filterPanel.classList.remove('show');
             }
-        });
-
-        // Toggle dropdowns
-        document.querySelectorAll('.dropdown-toggle').forEach(button => {
-            button.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const dropdown = this.nextElementSibling;
-                const isOpen = dropdown.classList.contains('show');
-
-                // Cerrar todos los dropdowns
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-
-                // Abrir este dropdown si no estaba abierto
-                if (!isOpen) {
-                    dropdown.classList.add('show');
-                }
-            });
-        });
-
-        // Manejo de selección en dropdowns
-        document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                const filterType = this.name.replace('-quick', '');
-                const filterValue = this.value;
-                const label = document.getElementById(filterType + '-label');
-                const dropdown = this.closest('.dropdown-menu');
-                const toggle = dropdown.previousElementSibling;
-
-                // Actualizar label del botón
-                if (filterValue === '') {
-                    label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
-                    toggle.classList.remove('active');
-                } else {
-                    const optionText = this.nextElementSibling.textContent.trim();
-                    label.textContent = optionText;
-                    toggle.classList.add('active');
-                }
-
-                // Actualizar campos hidden del formulario
-                const hiddenField = document.getElementById(`quick-${filterType}`);
-                if (hiddenField) {
-                    hiddenField.value = filterValue;
-                }
-
-                // También actualizar el select del panel de filtros avanzados si existe
-                const formField = document.querySelector(`select[name="${filterType}"]`);
-                if (formField) {
-                    formField.value = filterValue;
-                }
-
-                // Cerrar dropdown
-                dropdown.classList.remove('show');
-
-                // Aplicar filtro automáticamente
-                searchForm.submit();
-            });
         });
 
         // Reset todos los filtros
         if (resetAllBtn) {
             resetAllBtn.addEventListener('click', function () {
-                // Limpiar formulario y campos hidden
-                searchForm.querySelectorAll('input, select').forEach(field => {
-                    field.value = '';
-                });
-
-                // Limpiar también campos hidden específicos
-                document.getElementById('quick-turno').value = '';
-                document.getElementById('quick-modules').value = '';
-                document.getElementById('quick-orientation').value = '';
-
-                // Resetear dropdowns
-                document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
-                    radio.checked = radio.value === '';
-                });
-
-                // Resetear labels de dropdowns
-                document.getElementById('turno-label').textContent = 'Turno';
-                document.getElementById('modules-label').textContent = 'Módulo';
-                document.getElementById('orientation-label').textContent = 'Orientación';
-
-                // Remover clase active de botones
-                document.querySelectorAll('.dropdown-toggle').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                // Aplicar filtros (limpiar)
-                searchForm.submit();
+            // Limpiar formulario y campos hidden
+            searchForm.querySelectorAll('input, select').forEach(field => {
+                field.value = '';
             });
+
+            // Limpiar también campos hidden específicos
+            document.getElementById('quick-turno').value = '';
+            document.getElementById('quick-modules').value = '';
+            document.getElementById('quick-orientation').value = '';
+
+            // Resetear dropdowns
+            document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
+                radio.checked = radio.value === '';
+            });
+
+            // Resetear labels de dropdowns
+            document.getElementById('turno-label').textContent = 'Turno';
+            document.getElementById('modules-label').textContent = 'Módulo';
+            document.getElementById('orientation-label').textContent = 'Orientación';
+
+            // Remover clase active de botones
+            document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Cerrar dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
+
+            // Aplicar (limpiar filtros)
+            searchForm.submit();
+        });
         }
 
-        // Clear filters desde panel avanzado
+        // Limpiar filtros del panel avanzado
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', function () {
-                // Limpiar campos del panel
-                filterPanel.querySelectorAll('input, select').forEach(field => {
-                    field.value = '';
-                });
-
-                // También limpiar campos hidden
-                document.getElementById('quick-turno').value = '';
-                document.getElementById('quick-modules').value = '';
-                document.getElementById('quick-orientation').value = '';
-
-                // Resetear dropdowns
-                document.querySelectorAll('.dropdown-option input[type="radio"]').forEach(radio => {
-                    radio.checked = radio.value === '';
-                });
-
-                // Resetear labels
-                document.getElementById('turno-label').textContent = 'Turno';
-                document.getElementById('modules-label').textContent = 'Módulo';
-                document.getElementById('orientation-label').textContent = 'Orientación';
-
-                // Remover clase active
-                document.querySelectorAll('.dropdown-toggle').forEach(btn => {
-                    btn.classList.remove('active');
-                });
+                if (resetAllBtn) {
+                    resetAllBtn.click(); // Usar la misma lógica
+                }
             });
         }
 
@@ -564,17 +670,44 @@
             }
         });
 
+        // Si hay parámetros específicos, centrar el mapa
+        const defaultLat = -34.6037;
+        const defaultLng = -58.3816;
+        if (centerLat !== defaultLat || centerLng !== defaultLng) {
+            // Esperar a que el mapa esté inicializado
+            setTimeout(() => {
+            if (typeof map !== 'undefined') {
+                map.setView([centerLat, centerLng], zoomLevel);
+
+                // Agregar marcador destacado
+                const highlightMarker = L.marker([centerLat, centerLng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+
+                if (placeName) {
+                    highlightMarker.bindPopup(`<b>${placeName}</b>`).openPopup();
+                }
+            }
+            }, 1000);
+        }
+
         // Sincronizar estado del checkbox con la variable global heatmapActive en map_scripts.js
         if (typeof setHeatmapState === 'function') {
             heatmapToggle.addEventListener('change', function () {
                 setHeatmapState(this.checked);
             });
 
-            // Configurar estado inicial del heatmap
-            {% if show_heatmap %}
-            heatmapToggle.checked = true;
-            setHeatmapState(true);
-            {% endif %}
+            // Configurar estado inicial del heatmap basado en el checkbox
+            if (heatmapToggle.checked) {
+                setHeatmapState(true);
+            }
         } else {
             console.warn('La función setHeatmapState no está disponible. Asegurate de que map_scripts.html se cargue correctamente.');
         }
@@ -595,34 +728,6 @@
         } else if (placesData.length === 0) {
             console.log('No hay lugares para mostrar en el mapa.');
         }
-
-        // Inicializar dropdowns con valores actuales de la URL
-        const currentParams = new URLSearchParams(window.location.search);
-
-        // Para cada tipo de filtro dropdown, seleccionar el radio button correspondiente
-        ['turno', 'modules', 'orientation'].forEach(filterType => {
-            const paramValue = currentParams.get(filterType) || '';
-
-            // Encontrar y marcar el radio button correcto
-            const radioButton = document.querySelector(`input[name="${filterType}-quick"][value="${paramValue}"]`);
-            if (radioButton) {
-                radioButton.checked = true;
-
-                // Actualizar el texto del botón del dropdown
-                const label = document.getElementById(filterType + '-label');
-                const dropdown = radioButton.closest('.dropdown-menu');
-                const toggle = dropdown.previousElementSibling;
-
-                if (paramValue === '') {
-                    label.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1);
-                    toggle.classList.remove('active');
-                } else {
-                    const optionText = radioButton.nextElementSibling.textContent.trim();
-                    label.textContent = optionText;
-                    toggle.classList.add('active');
-                }
-            }
-        });
     });
 </script>
 
