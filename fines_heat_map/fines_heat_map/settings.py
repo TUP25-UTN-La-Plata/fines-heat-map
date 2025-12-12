@@ -208,7 +208,7 @@ UNFOLD = {
 
 # Configuración del mapa interactivo
 MAP_CONFIG = {
-    "default_center": [-34.6037, -58.3816],  # Buenos Aires, Argentina
+    "default_center": [-34.9214, -57.9544],  # La Plata, Argentina
     "default_zoom": 12,
     "max_zoom": 18,
     "min_zoom": 6,
