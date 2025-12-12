@@ -159,6 +159,11 @@
         let markers = [];
         let heatPoints = [];
 
+        // Constantes para el cálculo del radio y blur
+        const ZOOM_REF = 13;
+        const RADIO_BASE = 500;  // Píxeles en zoom 13
+        const BLUR_BASE = 30;   // Difuminado en zoom 13
+
         // Cargar datos guardados
         function loadSavedPoints() {
             const saved = localStorage.getItem('heatmapPoints');
@@ -191,7 +196,7 @@
             localStorage.setItem('heatmapPoints', JSON.stringify(data));
         }
 
-        // Actualizar heatmap con radio dinámico según zoom
+        // Actualizar heatmap con radio fijo que mantiene área geográfica constante
         function updateHeatmap() {
             // Remover capa existente
             if (heatLayer) {
@@ -200,58 +205,40 @@
             }
 
             const currentZoom = map.getZoom();
-            // Si estás muy cerca (zoom alto), desactivar heatmap para ver las calles
-            const disableHeatAtZoom = 17; // >=17 desactiva (permitir acercarse más)
-            if (currentZoom >= disableHeatAtZoom) {
-                return; // no agregar la capa
+            
+            if (currentZoom >= 17) {
+                if (heatLayer) map.removeLayer(heatLayer);
+                return;
             }
 
-            // Parámetros por defecto
-            let baseRadius = 80;
-            let blur = 30;
-            let maxIntensity = 0.4;
-            let minOpacity = 0.02;
+            // 1. FÓRMULA MATEMÁTICA CORREGIDA
+            // Al hacer Zoom In (+), el mapa crece x2, el radio debe crecer x2
+            // Fórmula: 2 ^ (zoomActual - ZOOM_REF)
+            const escala = Math.pow(2, currentZoom - ZOOM_REF);
+            
+            const nuevoRadio = RADIO_BASE * escala;
+            const nuevoBlur = BLUR_BASE * escala;
 
-            // Si estás bastante alejado (vista de ciudad), intensificar el heatmap
-            // Aumentamos el umbral para que la vista de ciudad también aplique en zooms un poco más cercanos
-            const cityZoomThreshold = 13; // <=13 consideramos vista de ciudad (antes 11)
-            if (currentZoom <= cityZoomThreshold) {
-                baseRadius = 140;        // cubre más área
-                blur = 20;               // menos blur para color más definido
-                maxIntensity = 0.85;    // más intenso
-                minOpacity = 0.06;      // más visible
-            } else if (currentZoom <= 15) {
-                // vista intermedia: un poco más intenso que el default
-                baseRadius = 100;
-                blur = 25;
-                maxIntensity = 0.75;
-                minOpacity = 0.04;
-            }
-
-            // Calcular radio basado en zoom pero con límites para evitar extremos
-            let radiusAtZoom;
-            if (currentZoom <= cityZoomThreshold) {
-                // Cuando estás lejos, aumentar el radio exponencialmente para que el calor sea visible
-                radiusAtZoom = Math.min(600, baseRadius * Math.pow(2, 13 - currentZoom));
+            // 2. RENDERIZADO OPTIMIZADO
+            if (!heatLayer) {
+                // Si no existe, la creamos
+                heatLayer = L.heatLayer(heatPoints, {
+                    radius: nuevoRadio,
+                    blur: nuevoBlur,
+                    max: 0.6,
+                    minOpacity: 0.05,
+                    gradient: { 0.0: 'blue', 0.5: 'lime', 1.0: 'red' }
+                }).addTo(map);
             } else {
-                // Para zooms medios y cercanos, mantener el cálculo inverso
-                radiusAtZoom = Math.max(15, Math.min(200, baseRadius * Math.pow(2, currentZoom - 13)));
+                // Si ya existe, solo actualizamos valores (evita parpadeo)
+                if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+                
+                heatLayer.setLatLngs(heatPoints); // Actualizamos datos por si cambiaron
+                heatLayer.setOptions({
+                    radius: nuevoRadio,
+                    blur: nuevoBlur
+                });
             }
-
-            heatLayer = L.heatLayer(heatPoints, {
-                radius: radiusAtZoom,
-                blur: blur,
-                max: maxIntensity,
-                minOpacity: minOpacity,
-                // Gradiente con tonos de azul -> verde -> amarillo -> naranja (sin rojo puro)
-                gradient: {
-                    0.0: '#0000FF',
-                    0.25: '#00FF00',
-                    0.5: '#FFFF00',
-                    0.75: '#FF7F00',
-                    1.0: '#FF7F00'
-                }
-            }).addTo(map);
         }
 
         // Añadir marcador al mapa
