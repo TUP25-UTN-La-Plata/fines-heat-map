@@ -1024,13 +1024,34 @@
                 console.warn('Función addPlacesToMap no disponible');
                 // Fallback: agregar markers manualmente
                 if (typeof map !== 'undefined') {
+                    var markers = [];
+                    var bounds = L.latLngBounds([]);
+                    
                     mapData.forEach(place => {
                         if (place.lat && place.lng) {
-                            L.marker([place.lat, place.lng])
+                            var marker = L.marker([place.lat, place.lng])
                                 .addTo(map)
                                 .bindPopup(`<strong>${place.name}</strong><br>${place.address}`);
+                            markers.push(marker);
+                            bounds.extend([place.lat, place.lng]);
                         }
                     });
+                    
+                    // Ajustar vista del mapa para mostrar todos los marcadores
+                    if (markers.length > 0 && bounds.isValid()) {
+                        try {
+                            setTimeout(function() {
+                                if (map) {
+                                    map.fitBounds(bounds.pad(0.1), {
+                                        maxZoom: 15
+                                    });
+                                }
+                            }, 100);
+                        } catch (e) {
+                            console.warn('Error al ajustar vista del mapa:', e);
+                        }
+                    }
+                    
                     console.log('Fallback: markers agregados manualmente');
                 }
             }

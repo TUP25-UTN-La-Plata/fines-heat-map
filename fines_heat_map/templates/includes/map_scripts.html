@@ -219,6 +219,9 @@
                         <h3 class="text-base font-semibold text-blue-800 mb-1">${place.name}</h3>
                         ${place.commission_number ? `<p class="text-sm text-gray-700 mb-1">Comisión: ${place.commission_number}</p>` : ''}
                         <p class="text-sm text-gray-600 mb-2">${place.address}, ${place.city}</p>
+                        ${place.modules.length > 0 ? `<p class="text-sm text-gray-600 mb-2">Módulos: ${place.modules.join(', ')}</p>` : ''}
+                        ${place.turno ? `<p class="text-sm text-gray-600 mb-2">Turno: ${place.turno}</p>` : ''}
+                        ${place.orientation ? `<p class="text-sm text-gray-600 mb-2">Orientación: ${place.orientation}</p>` : ''}
                     </div>
                 `;
 
@@ -230,6 +233,33 @@
 
         window.map.addLayer(window.markers);
         window.heat.setLatLngs(heatPoints);
+
+        // Ajustar vista del mapa para mostrar todos los marcadores encontrados
+        // Usar los datos directamente en lugar de getLayers() porque markerClusterGroup puede tener delay
+        if (placesData.length > 0 && heatPoints.length > 0) {
+            try {
+                // Calcular bounds desde los datos de puntos directamente
+                var bounds = L.latLngBounds([]);
+                placesData.forEach(function (place) {
+                    if (place.lat && place.lng) {
+                        bounds.extend([place.lat, place.lng]);
+                    }
+                });
+                
+                if (bounds.isValid()) {
+                    // Ajustar vista con un pequeño delay para asegurar que los marcadores estén renderizados
+                    setTimeout(function() {
+                        if (window.map) {
+                            window.map.fitBounds(bounds.pad(0.1), {
+                                maxZoom: 15  // Limitar el zoom máximo para no acercarse demasiado
+                            });
+                        }
+                    }, 100);
+                }
+            } catch (e) {
+                console.warn('Error al ajustar vista del mapa:', e);
+            }
+        }
 
         // Configurar heatmap si está habilitado globalmente
         if (typeof show_heatmap !== 'undefined' && show_heatmap) {
