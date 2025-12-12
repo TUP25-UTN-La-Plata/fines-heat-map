@@ -13,6 +13,9 @@ import os
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
+from django.templatetags.static import static
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 # Cargar variables de entorno
 load_dotenv()
@@ -36,6 +39,10 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.1.33", "192.168.0.156"]
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",  # Debe ir ANTES de django.contrib.admin
+    "unfold.contrib.filters",  # Filtros mejorados
+    "unfold.contrib.forms",  # Formularios mejorados
+    "unfold.contrib.import_export",  # Integración con django-import-export
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -44,13 +51,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'import_export',
     "rest_framework",
+    "fines_heat_map.apps.FinesHeatMapConfig",  # AppConfig para inicializar el admin
     "heatmap",
-    "gestion_instituciones",
-    "gestion_comisiones",
+    "gestion_instituciones.apps.GestionInstitucionesConfig",
+    "gestion_comisiones.apps.GestionComisionesConfig",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -138,6 +147,60 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# ==================================================
+# CONFIGURACIÓN DE DJANGO-UNFOLD
+# ==================================================
+
+def environment_callback(request):
+    return "Development" if DEBUG else "Production"
+
+UNFOLD = {
+    "SITE_TITLE": _("FinEs Mapa Interactivo"),
+    "SITE_HEADER": _("Panel de Administración"),
+    "SITE_URL": "/",
+    "SITE_ICON": lambda request: static("img/texto_transparente.png"),
+    "SITE_LOGO": lambda request: static("img/texto_transparente.png"),
+    "SITE_SYMBOL": "settings",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "ENVIRONMENT": "fines_heat_map.settings.environment_callback",
+    "DASHBOARD_CALLBACK": None,  # Usamos nuestro propio custom_index en admin_init.py
+    "LOGIN": {
+        "image": lambda request: static("img/texto_transparente.png"),
+        "redirect_after": lambda request: reverse_lazy("admin:index"),
+    },
+    "STYLES": [],
+    "SCRIPTS": [],
+    "COLORS": {
+        "primary": {
+            "50": "245 245 255",
+            "100": "235 235 255",
+            "200": "220 220 255",
+            "300": "200 200 255",
+            "400": "170 170 255",
+            "500": "36 36 235",  # #2424eb
+            "600": "26 26 180",
+            "700": "20 20 150",
+            "800": "15 15 120",
+            "900": "10 10 90",
+            "950": "5 5 50",
+        },
+    },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "🇬🇧",
+                "fr": "🇫🇷",
+                "nl": "🇳🇱",
+            },
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+    },
+}
 
 # ==================================================
 # CONFIGURACIÓN PERSONALIZADA DEL PROYECTO FINES

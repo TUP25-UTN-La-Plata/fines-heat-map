@@ -18,6 +18,7 @@ class OrientacionAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = OrientacionResource
     list_display = ('nombre', 'descripcion', 'estado')
     search_fields = ('nombre',)
+    readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {'fields': ('nombre', 'descripcion')}),
         ('Auditoría', {'fields': ('created_at', 'updated_at', 'deleted_at'), 'classes': ('collapse',)}),
@@ -28,6 +29,7 @@ class ModuloAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = ModuloResource
     list_display = ('nombre', 'descripcion', 'estado')
     search_fields = ('nombre',)
+    readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {'fields': ('nombre', 'descripcion')}),
         ('Auditoría', {'fields': ('created_at', 'updated_at', 'deleted_at'), 'classes': ('collapse',)}),
@@ -39,6 +41,7 @@ class ComisionAdmin(ImportExportModelAdmin, AuditAdminMixin):
     list_display = ('numero', 'sede', 'orientacion', 'modulo', 'turno', 'estado')
     list_filter = ('turno', 'modulo', 'orientacion', 'sede__localidad__partido')
     search_fields = ('numero', 'sede__nombre', 'tutor')
+    readonly_fields = ('created_at', 'updated_at')
     
     # ¡IMPORTANTE! Esto activa el buscador de sedes dentro de la comisión
     autocomplete_fields = ['sede', 'orientacion', 'modulo'] 
