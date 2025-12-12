@@ -168,11 +168,29 @@
         });
     }
 
+    // Variables globales para guardar la ubicación inicial del mapa
+    window.initialMapCenter = null;
+    window.initialMapZoom = null;
+    window.mapInitialized = false;
+
+    // Función para notificar que el mapa está inicializado
+    window.onMapInitialized = function() {
+        window.mapInitialized = true;
+        // Disparar evento personalizado para que otros scripts sepan que el mapa está listo
+        if (typeof window.dispatchEvent !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mapInitialized'));
+        }
+    };
+
     // Inicializar el mapa
     if (hasSpecificLocation) {
         // Si hay ubicación específica en la URL, usar esa
         console.log('Usando ubicación específica de parámetros URL');
         initializeMap(specificLocation, specificZoom);
+        // Guardar como ubicación inicial
+        window.initialMapCenter = specificLocation;
+        window.initialMapZoom = specificZoom;
+        window.onMapInitialized();
     } else {
         // Si no hay ubicación específica, intentar obtener la geolocalización del navegador
         getBrowserLocation(function(userLocation) {
@@ -180,6 +198,10 @@
             mapConfig.default_center = userLocation;
             console.log('Inicializando mapa con:', userLocation);
             initializeMap(userLocation, mapConfig.default_zoom);
+            // Guardar como ubicación inicial
+            window.initialMapCenter = userLocation;
+            window.initialMapZoom = mapConfig.default_zoom;
+            window.onMapInitialized();
         });
     }
 
@@ -205,7 +227,8 @@
     };
 
     // Helper para agregar marcadores desde JSON
-    window.addPlacesToMap = function (placesData) {
+    // shouldFitBounds: si es true, ajusta la vista a los marcadores; si es false, mantiene la vista actual
+    window.addPlacesToMap = function (placesData, shouldFitBounds = true) {
         window.markers.clearLayers();
         window.heat.setLatLngs([]);
         var heatPoints = [];
@@ -235,8 +258,8 @@
         window.heat.setLatLngs(heatPoints);
 
         // Ajustar vista del mapa para mostrar todos los marcadores encontrados
-        // Usar los datos directamente en lugar de getLayers() porque markerClusterGroup puede tener delay
-        if (placesData.length > 0 && heatPoints.length > 0) {
+        // Solo si shouldFitBounds es true
+        if (shouldFitBounds && placesData.length > 0 && heatPoints.length > 0) {
             try {
                 // Calcular bounds desde los datos de puntos directamente
                 var bounds = L.latLngBounds([]);

@@ -723,7 +723,8 @@
                 .then(response => response.json())
                 .then(data => {
                     populateDropdowns(data);
-                    updateMapWithData(data); // Mostrar datos iniciales
+                    // Al cargar datos iniciales, no ajustar la vista (mantener ubicación inicial)
+                    updateMapWithData(data, false); // shouldFitBounds = false
                 })
                 .catch(error => {
                     console.error('Error al inicializar filtros:', error);
@@ -880,6 +881,9 @@
             const orientation = document.getElementById('quick-orientation').value || 
                                document.getElementById('filter-orientation')?.value || '';
             
+            // Verificar si no hay búsqueda ni filtros activos
+            const hasNoFilters = !searchText && !turno && !modules && !orientation;
+            
             // Construir URL según si hay búsqueda o no
             let url;
             const params = new URLSearchParams();
@@ -921,6 +925,13 @@
             console.log('Fetching:', finalUrl);
             console.log('Parámetros:', { searchText, turno, modules, orientation });
             console.log('Búsqueda vacía:', !searchText || searchText.length === 0);
+            console.log('Sin filtros:', hasNoFilters);
+            
+            // Si no hay filtros, restaurar ubicación inicial antes de cargar datos
+            if (hasNoFilters && window.initialMapCenter && window.initialMapZoom && typeof map !== 'undefined') {
+                console.log('Restaurando ubicación inicial:', window.initialMapCenter, window.initialMapZoom);
+                map.setView(window.initialMapCenter, window.initialMapZoom);
+            }
             
             // Hacer petición
             fetch(finalUrl)
@@ -933,7 +944,8 @@
                 .then(data => {
                     console.log('Datos recibidos:', data);
                     console.log('Cantidad de resultados:', Array.isArray(data) ? data.length : 0);
-                    updateMapWithData(data);
+                    // Si no hay filtros, no ajustar la vista (ya se restauró arriba)
+                    updateMapWithData(data, !hasNoFilters);
                 })
                 .catch(error => {
                     console.error('Error al cargar datos:', error);
@@ -944,7 +956,7 @@
                             .then(response => response.json())
                             .then(data => {
                                 console.log('Datos de fallback recibidos:', data);
-                                updateMapWithData(data);
+                                updateMapWithData(data, !hasNoFilters);
                             })
                             .catch(err => console.error('Error en fallback:', err));
                     }
@@ -952,7 +964,8 @@
         }
         
         // FUNCIÓN PARA ACTUALIZAR EL MAPA CON NUEVOS DATOS
-        function updateMapWithData(sedesData) {
+        // shouldFitBounds: si es true, ajusta la vista a los marcadores; si es false, mantiene la vista actual
+        function updateMapWithData(sedesData, shouldFitBounds = true) {
             console.log('Actualizando mapa con datos:', sedesData);
             console.log('Cantidad de sedes recibidas:', sedesData.length);
             
@@ -1018,7 +1031,7 @@
             
             // Actualizar mapa
             if (typeof addPlacesToMap === 'function') {
-                addPlacesToMap(mapData);
+                addPlacesToMap(mapData, shouldFitBounds);
                 console.log('Función addPlacesToMap ejecutada');
             } else {
                 console.warn('Función addPlacesToMap no disponible');
@@ -1037,8 +1050,8 @@
                         }
                     });
                     
-                    // Ajustar vista del mapa para mostrar todos los marcadores
-                    if (markers.length > 0 && bounds.isValid()) {
+                    // Ajustar vista del mapa para mostrar todos los marcadores (solo si shouldFitBounds es true)
+                    if (shouldFitBounds && markers.length > 0 && bounds.isValid()) {
                         try {
                             setTimeout(function() {
                                 if (map) {
@@ -1209,7 +1222,30 @@
         });
         
         // Inicializar filtros dinámicos al cargar la página
-        initializeFilters();
+        // Esperar a que el mapa esté completamente inicializado
+        function waitForMapAndInitialize() {
+            if (window.mapInitialized && typeof map !== 'undefined') {
+                initializeFilters();
+            } else {
+                // Si el mapa aún no está inicializado, esperar al evento o intentar de nuevo
+                if (typeof window.addEventListener !== 'undefined') {
+                    window.addEventListener('mapInitialized', function() {
+                        setTimeout(initializeFilters, 100); // Pequeño delay para asegurar que el mapa esté listo
+                    }, { once: true });
+                }
+                // Fallback: intentar de nuevo después de un delay
+                setTimeout(function() {
+                    if (window.mapInitialized && typeof map !== 'undefined') {
+                        initializeFilters();
+                    } else {
+                        // Si después de 2 segundos aún no está listo, cargar de todos modos
+                        setTimeout(initializeFilters, 2000);
+                    }
+                }, 500);
+            }
+        }
+        
+        waitForMapAndInitialize();
 
         // Si hay parámetros específicos, centrar el mapa
         const defaultLat = -34.6037;
