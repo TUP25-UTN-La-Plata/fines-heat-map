@@ -45,6 +45,12 @@
         }
     };
 
+    // Función global para limpiar marcadores
+    window.clearMapMarkers = function () {
+        markers.clearLayers();
+        heat.setLatLngs([]);
+    };
+
     // Helper para agregar marcadores desde JSON
     window.addPlacesToMap = function (placesData) {
         markers.clearLayers();
