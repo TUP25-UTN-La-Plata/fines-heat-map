@@ -8,53 +8,70 @@
 
         // Obtener configuración del mapa desde context (si existe) o usar valores por defecto
         const mapConfig = {% if map_config %}{{ map_config| safe }}{% else %}{
-        "default_center": [-34.6037, -58.3816],
+        "default_center": [-34.9214, -57.9544],
         "default_zoom": 12,
         "max_zoom": 18,
         "min_zoom": 6,
         "heatmap_radius": 80
     }{% endif %};
 
-    // Inicializar el mapa
-    var map = L.map('map', {
-        center: mapConfig.default_center,
-        zoom: mapConfig.default_zoom,
-        maxZoom: mapConfig.max_zoom,
-        minZoom: mapConfig.min_zoom,
-        zoomControl: false // Lo añadiremos manualmente para mejor control de posición
-    });
+    // Verificar si hay parámetros específicos de ubicación desde la URL
+    const hasSpecificLocation = {% if center_lat and center_lng %}true{% else %}false{% endif %};
+    const specificLocation = hasSpecificLocation ? [{{ center_lat }}, {{ center_lng }}] : null;
+    const specificZoom = {% if zoom_level %}{{ zoom_level }}{% else %}mapConfig.default_zoom{% endif %};
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // Función para inicializar el mapa con una ubicación específica
+    function initializeMap(center, zoom) {
+        // Inicializar el mapa
+        window.map = L.map('map', {
+            center: center,
+            zoom: zoom,
+            maxZoom: mapConfig.max_zoom,
+            minZoom: mapConfig.min_zoom,
+            zoomControl: false
+        });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(window.map);
 
-    var markers = L.markerClusterGroup();
-    var heat = L.heatLayer([], { radius: mapConfig.heatmap_radius });
-    var heatmapActive = false; // Estado inicial del heatmap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(window.map);
+
+        window.markers = L.markerClusterGroup();
+        window.heat = L.heatLayer([], { radius: mapConfig.heatmap_radius });
+        window.heatmapActive = false;
+    }
+
+    // Si hay ubicación específica, usar esa; sino usar ubicación por defecto
+    if (hasSpecificLocation) {
+        console.log('Usando ubicación específica de parámetros URL');
+        initializeMap(specificLocation, specificZoom);
+    } else {
+        console.log('Usando ubicación por defecto');
+        initializeMap(mapConfig.default_center, mapConfig.default_zoom);
+    }
 
     // Función global para configurar el estado del heatmap
     window.setHeatmapState = function (active) {
         if (active) {
-            map.addLayer(heat);
-            heatmapActive = true;
+            window.map.addLayer(window.heat);
+            window.heatmapActive = true;
         } else {
-            map.removeLayer(heat);
-            heatmapActive = false;
+            window.map.removeLayer(window.heat);
+            window.heatmapActive = false;
         }
     };
 
     // Función global para limpiar marcadores
     window.clearMapMarkers = function () {
-        markers.clearLayers();
-        heat.setLatLngs([]);
+        window.markers.clearLayers();
+        window.heat.setLatLngs([]);
     };
 
     // Helper para agregar marcadores desde JSON
     window.addPlacesToMap = function (placesData) {
-        markers.clearLayers();
-        heat.setLatLngs([]);
+        window.markers.clearLayers();
+        window.heat.setLatLngs([]);
         var heatPoints = [];
 
         placesData.forEach(function (place) {
@@ -66,50 +83,26 @@
                         <h3 class="text-base font-semibold text-blue-800 mb-1">${place.name}</h3>
                         ${place.commission_number ? `<p class="text-sm text-gray-700 mb-1">Comisión: ${place.commission_number}</p>` : ''}
                         <p class="text-sm text-gray-600 mb-2">${place.address}, ${place.city}</p>
-                        <a href="/instituciones/${place.id}/" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium py-1 px-2 rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Ver detalle</a>
                     </div>
                 `;
 
                 marker.bindPopup(popupContent);
-                markers.addLayer(marker);
+                window.markers.addLayer(marker);
                 heatPoints.push([place.lat, place.lng]);
             }
         });
 
-        map.addLayer(markers);
-        heat.setLatLngs(heatPoints);
+        window.map.addLayer(window.markers);
+        window.heat.setLatLngs(heatPoints);
 
         // Configurar heatmap si está habilitado globalmente
         if (typeof show_heatmap !== 'undefined' && show_heatmap) {
-            setHeatmapState(show_heatmap);
+            window.setHeatmapState(show_heatmap);
             if (document.getElementById('heatmap-toggle')) {
                 document.getElementById('heatmap-toggle').checked = show_heatmap;
             }
         }
     };
-
-    // Geolocation: Botón para centrar en la ubicación del usuario
-    var geolocateButton = L.control({ position: 'bottomright' });
-    geolocateButton.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-        div.innerHTML = '<button type="button" class="bg-white text-gray-900 shadow-lg hover:bg-gray-100 p-2 rounded" aria-label="Centrar mapa en mi ubicación">📍</button>';
-        div.onclick = function () {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
-                }, function (error) {
-                    alert('No se pudo obtener tu ubicación. Asegurate de dar permisos al navegador.');
-                    console.error('Error de geolocalización:', error);
-                });
-            } else {
-                alert('Tu navegador no soporta la geolocalización.');
-            }
-        };
-        return div;
-    };
-    geolocateButton.addTo(map);
 
     // Helper JS para place_form.html: Capturar lat/lng al hacer clic en el mapa
     if (document.getElementById('id_lat') && document.getElementById('id_lng')) {
@@ -156,8 +149,6 @@
         });
     }
 
-    // Exponer configuración y funciones globalmente
-    window.mapConfig = mapConfig;
-    window.map = map;
-    });
+    }); // Cierre de DOMContentLoaded
+
 </script>

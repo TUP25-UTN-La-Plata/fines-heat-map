@@ -710,10 +710,10 @@
         let moduloMap = {}; // { "Módulo 1": 1, "Módulo 2": 2, ... }
         let orientacionMap = {}; // { "Cs. Sociales": 1, "Gest. y Adm.": 2, ... }
         let turnoMap = {
-            'Mañana': 'm',
-            'Tarde': 't', 
-            'Vespertino': 'v',
-            'Noche': 'n'
+            'Mañana': 'M',
+            'Tarde': 'T', 
+            'Vespertino': 'V',
+            'Noche': 'N'
         };
         
         // FUNCIÓN PARA INICIALIZAR FILTROS DINÁMICOS
@@ -870,8 +870,11 @@
         function fetchAndUpdateMap() {
             // Recopilar parámetros de filtro
             const searchText = document.getElementById('main-search').value.trim();
-            const turno = document.getElementById('quick-turno').value || 
-                         document.getElementById('filter-turno')?.value || '';
+            
+            // Para turno: obtener del radio button seleccionado
+            const turnoRadio = document.querySelector('input[name="turno_quick"]:checked');
+            const turno = turnoRadio ? turnoRadio.value : '';
+            
             const modules = document.getElementById('quick-modules').value || 
                            document.getElementById('filter-modules')?.value || '';
             const orientation = document.getElementById('quick-orientation').value || 
@@ -890,10 +893,27 @@
                 url = API_URL;
             }
             
-            // Agregar otros parámetros
-            if (turno) params.append('turno', turnoMap[turno] || '');
-            if (modules && moduloMap[modules]) params.append('moduloID', moduloMap[modules]);
-            if (orientation && orientacionMap[orientation]) params.append('orientacionID', orientacionMap[orientation]);
+            // Agregar otros parámetros - procesar correctamente cada tipo
+            // Para turno: convertir nombre a letra
+            if (turno) {
+                const turnoMapa = {
+                    'Mañana': 'M',
+                    'Tarde': 'T',
+                    'Vespertino': 'V', 
+                    'Noche': 'N'
+                };
+                params.append('turno', turnoMapa[turno] || '');
+            }
+            
+            // Para módulos: extraer número de "Módulo X" 
+            if (modules) {
+                const moduloMatch = modules.match(/Módulo (\d+)/);
+                if (moduloMatch) {
+                    params.append('moduloID', moduloMatch[1]);
+                }
+            }
+            
+            if (orientation) params.append('orientacionID', orientation);  // Enviar orientación directamente
             
             // URL final
             const finalUrl = params.toString() ? `${url}?${params.toString()}` : url;
