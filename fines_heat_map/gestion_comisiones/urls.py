@@ -16,8 +16,11 @@ Including another URLconf
 """
 
 from django.urls import path
-from .views import comisiones
+from .views import comisiones, get_all_modulos, get_all_orientaciones
 
 urlpatterns = [
     path("", comisiones, name="comisiones"),
+    # API endpoints
+    path("api/modulos/", get_all_modulos, name="api_modulos"),
+    path("api/orientaciones/", get_all_orientaciones, name="api_orientaciones"),
 ]

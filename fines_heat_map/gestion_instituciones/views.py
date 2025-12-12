@@ -205,3 +205,25 @@ def lista_instituciones(request):
         context = {"form": form}
 
     return render(request, "gestion_instituciones/place_list.html", context)
+
+
+def detalle_institucion(request, pk):
+    """Vista de detalle de una institución"""
+    if USE_TEST_DATA:
+        # Buscar en datos de prueba
+        test_places = get_test_data()
+        place = next((p for p in test_places if p['id'] == int(pk)), None)
+        
+        if not place:
+            from django.http import Http404
+            raise Http404("Institución no encontrada")
+        
+        context = {"place": place}
+    else:
+        # Cuando tengamos modelos reales
+        from django.shortcuts import get_object_404
+        from .models import Sede
+        place = get_object_404(Sede, pk=pk, deleted_at=None)
+        context = {"place": place}
+    
+    return render(request, "gestion_instituciones/place_detail.html", context)

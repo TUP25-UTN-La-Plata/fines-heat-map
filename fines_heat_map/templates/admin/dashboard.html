@@ -1,0 +1,318 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Dashboard | FinEs Mapa Interactivo{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.65rem 1.25rem;
+        background-color: white;
+        color: #4b5563;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .back-button:hover {
+        background-color: #f9fafb;
+        border-color: #9ca3af;
+        color: #1f2937;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #2424eb;
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2424eb;
+        margin: 0;
+    }
+    
+    .dashboard-charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .chart-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-card h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-charts {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="margin: 0 0 0.25rem 0;">Dashboard</h1>
+            <p class="subtitle" style="margin: 0;">Estadísticas y Gráficos del Sistema</p>
+        </div>
+        <a href="{% url 'admin:index' %}" class="back-button">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Volver al inicio
+        </a>
+    </div>
+
+    {% if dashboard_data %}
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Total de Sedes</h3>
+            <p class="stat-value">{{ dashboard_data.total_sedes }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total de Comisiones</h3>
+            <p class="stat-value">{{ dashboard_data.total_comisiones }}</p>
+        </div>
+    </div>
+
+    <div class="dashboard-charts">
+        <div class="chart-card">
+            <h3>Comisiones por Turno</h3>
+            <div class="chart-container">
+                <canvas id="turnoChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Comisiones por Orientación</h3>
+            <div class="chart-container">
+                <canvas id="orientacionChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Comisiones por Módulo</h3>
+            <div class="chart-container">
+                <canvas id="moduloChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Comisiones por Partido</h3>
+            <div class="chart-container">
+                <canvas id="partidoChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Comisiones por Localidad</h3>
+            <div class="chart-container">
+                <canvas id="localidadChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos del dashboard
+        const dashboardData = {
+            turno_labels: {{ dashboard_data.turno_labels|safe }},
+            turno_data: {{ dashboard_data.turno_data|safe }},
+            turno_colors: {{ dashboard_data.turno_colors|safe }},
+            orientacion_labels: {{ dashboard_data.orientacion_labels|safe }},
+            orientacion_data: {{ dashboard_data.orientacion_data|safe }},
+            modulo_labels: {{ dashboard_data.modulo_labels|safe }},
+            modulo_data: {{ dashboard_data.modulo_data|safe }},
+            partido_labels: {{ dashboard_data.partido_labels|safe }},
+            partido_data: {{ dashboard_data.partido_data|safe }},
+            localidad_labels: {{ dashboard_data.localidad_labels|safe }},
+            localidad_data: {{ dashboard_data.localidad_data|safe }},
+        };
+        
+        // Configuración común para los gráficos
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+            },
+        };
+        
+        // Configuración para gráficos de barras (sin leyenda)
+        const barChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false, // Ocultar leyenda
+                },
+            },
+        };
+        
+        // Gráfico de Comisiones por Turno (Dona)
+        if (dashboardData.turno_labels && dashboardData.turno_labels.length > 0) {
+            new Chart(document.getElementById('turnoChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: dashboardData.turno_labels,
+                    datasets: [{
+                        data: dashboardData.turno_data,
+                        backgroundColor: dashboardData.turno_colors || ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+        
+    // Función para generar colores variados
+    function generateColors(count) {
+        const colors = [
+            '#667eea', // Púrpura
+            '#764ba2', // Púrpura oscuro
+            '#f093fb', // Rosa
+            '#4facfe', // Azul claro
+            '#00f2fe', // Cyan
+            '#43e97b', // Verde
+            '#38f9d7', // Verde agua
+            '#fa709a', // Rosa fuerte
+            '#fee140', // Amarillo
+            '#30cfd0', // Turquesa
+        ];
+        
+        // Si necesitamos más colores que los predefinidos, los repetimos
+        const result = [];
+        for (let i = 0; i < count; i++) {
+            result.push(colors[i % colors.length]);
+        }
+        return result;
+    }
+    
+    // Gráfico de Comisiones por Orientación (Barras horizontales)
+    if (dashboardData.orientacion_labels && dashboardData.orientacion_labels.length > 0) {
+        new Chart(document.getElementById('orientacionChart'), {
+            type: 'bar',
+            data: {
+                labels: dashboardData.orientacion_labels,
+                datasets: [{
+                    label: 'Comisiones',
+                    data: dashboardData.orientacion_data,
+                    backgroundColor: generateColors(dashboardData.orientacion_labels.length),
+                }]
+            },
+            options: {
+                ...barChartOptions,
+                indexAxis: 'y',
+            }
+        });
+    }
+    
+    // Gráfico de Comisiones por Módulo (Barras horizontales)
+    if (dashboardData.modulo_labels && dashboardData.modulo_labels.length > 0) {
+        new Chart(document.getElementById('moduloChart'), {
+            type: 'bar',
+            data: {
+                labels: dashboardData.modulo_labels,
+                datasets: [{
+                    label: 'Comisiones',
+                    data: dashboardData.modulo_data,
+                    backgroundColor: generateColors(dashboardData.modulo_labels.length),
+                }]
+            },
+            options: {
+                ...barChartOptions,
+                indexAxis: 'y',
+            }
+        });
+    }
+    
+    // Gráfico de Comisiones por Partido (Barras horizontales)
+    if (dashboardData.partido_labels && dashboardData.partido_labels.length > 0) {
+        new Chart(document.getElementById('partidoChart'), {
+            type: 'bar',
+            data: {
+                labels: dashboardData.partido_labels,
+                datasets: [{
+                    label: 'Comisiones',
+                    data: dashboardData.partido_data,
+                    backgroundColor: generateColors(dashboardData.partido_labels.length),
+                }]
+            },
+            options: {
+                ...barChartOptions,
+                indexAxis: 'y',
+            }
+        });
+    }
+    
+    // Gráfico de Comisiones por Localidad (Barras horizontales)
+    if (dashboardData.localidad_labels && dashboardData.localidad_labels.length > 0) {
+        new Chart(document.getElementById('localidadChart'), {
+            type: 'bar',
+            data: {
+                labels: dashboardData.localidad_labels,
+                datasets: [{
+                    label: 'Comisiones',
+                    data: dashboardData.localidad_data,
+                    backgroundColor: generateColors(dashboardData.localidad_labels.length),
+                }]
+            },
+            options: {
+                ...barChartOptions,
+                indexAxis: 'y',
+            }
+        });
+    }
+    </script>
+    {% else %}
+    <div style="padding: 1rem; background: #f0f0f0; border-radius: 8px; margin-bottom: 2rem;">
+        <p>No hay datos del dashboard disponibles.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

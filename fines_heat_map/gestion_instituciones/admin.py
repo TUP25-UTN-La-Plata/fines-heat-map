@@ -35,7 +35,8 @@ class LocalidadAdmin(ImportExportModelAdmin, AuditAdminMixin):
     list_display = ('nombre', 'partido', 'codigo_postal', 'estado')
     search_fields = ('nombre', 'partido__nombre') # Necesario para autocomplete_fields en Sede
     list_filter = ('partido', 'created_at') # Ojo: si hay muchos partidos, esto puede ser lento
-    autocomplete_fields = ['partido'] 
+    autocomplete_fields = ['partido']
+    readonly_fields = ('created_at', 'updated_at')
 
     fieldsets = (
         ('Datos', {'fields': ('nombre', 'codigo_postal', 'partido')}),
@@ -47,6 +48,7 @@ class SedeTipoAdmin(ImportExportModelAdmin, AuditAdminMixin):
     resource_class = SedeTipoResource
     list_display = ('nombre', 'descripcion_corta', 'estado')
     search_fields = ('nombre',) # Necesario para autocomplete
+    readonly_fields = ('created_at', 'updated_at')
 
     def descripcion_corta(self, obj):
         return (obj.descripcion[:50] + '...') if obj.descripcion and len(obj.descripcion) > 50 else obj.descripcion
@@ -71,6 +73,9 @@ class SedeAdmin(ImportExportModelAdmin, AuditAdminMixin):
     
     # Autocompletado: Vital para no cargar miles de localidades en un select
     autocomplete_fields = ['localidad', 'sede_tipo']
+    
+    # Campos de solo lectura
+    readonly_fields = ('created_at', 'updated_at')
 
     # Organización visual del formulario
     fieldsets = (

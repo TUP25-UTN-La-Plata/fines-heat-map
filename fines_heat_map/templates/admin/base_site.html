@@ -1,370 +1,256 @@
-<!DOCTYPE html>
+{% extends "admin/base_site.html" %}
 {% load static %}
-<html class="light" lang="es">
 
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>{% block title %}Admin - FinEs Mapa Interactivo{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-        rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#2424eb",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#111121",
-                    },
-                    fontFamily: {
-                        "display": ["Lexend", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings:
-                'FILL' 0,
-                'wght' 400,
-                'GRAD' 0,
-                'opsz' 24
-        }
-        
-        /* Sidebar responsive */
-        @media (max-width: 768px) {
-            .admin-sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                z-index: 50;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 280px;
-            }
-            
-            .admin-sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .admin-main-content {
-                margin-left: 0 !important;
-            }
-            
-            .admin-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 40;
-                display: none;
-            }
-            
-            .admin-overlay.show {
-                display: block;
-            }
-        }
-    </style>
-</head>
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | FinEs Mapa Interactivo{% endblock %}
 
-<body class="font-display bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100">
-    <div class="relative flex h-screen w-full flex-col group/design-root overflow-x-hidden">
-        <!-- Overlay para móviles -->
-        <div class="admin-overlay" id="admin-overlay"></div>
-        
-        <div class="flex h-screen">
-            <!-- SideNavBar -->
-            <aside
-                class="admin-sidebar flex h-full w-64 md:w-64 flex-col justify-between bg-white dark:bg-background-dark dark:border-r dark:border-gray-800 p-4 shadow-sm">
-                <div class="flex flex-col gap-4">
-                    <!-- Botón cerrar para móviles -->
-                    <div class="flex items-center justify-between md:hidden mb-4">
-                        <div class="flex items-center gap-3">
-                            <img src="{% static 'img/texto_transparente.png' %}" alt="FinEs application logo"
-                                class="h-8 w-auto" />
-                            <div class="flex flex-col">
-                                <h1 class="text-gray-900 dark:text-gray-50 text-sm font-medium leading-normal">
-                                    Mapa de Calor
-                                </h1>
-                            </div>
-                        </div>
-                        <button id="close-sidebar" class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
-                            <span class="material-symbols-outlined">close</span>
-                        </button>
-                    </div>
-                    
-                    <!-- Logo normal para desktop -->
-                    <div class="hidden md:flex items-center gap-3 px-2">
-                        <img src="{% static 'img/texto_transparente.png' %}" alt="FinEs application logo"
-                            class="h-10 w-auto" />
-                        <div class="flex flex-col">
-                            <h1 class="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal">
-                                Mapa de
-                            </h1>
-                            <p class="text-gray-900 dark:text-gray-50 text-base font-normal leading-normal">
-                                Calor </p>
-                        </div>
-                    </div>
-                    <nav class="flex flex-col gap-2 mt-4">
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary dark:text-white"
-                            href="{% url 'admin:index' %}">
-                            <span class="material-symbols-outlined text-primary dark:text-white">home</span>
-                            <p class="text-primary dark:text-white text-sm font-medium leading-normal">Inicio</p>
-                        </a>
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                            href="{% url 'home' %}">
-                            <span class="material-symbols-outlined text-gray-700 dark:text-gray-300">map</span>
-                            <p class="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">Ver sitio
-                                público</p>
-                        </a>
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                            href="#">
-                            <span class="material-symbols-outlined text-gray-700 dark:text-gray-300">apartment</span>
-                            <p class="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">Sedes</p>
-                        </a>
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                            href="#">
-                            <span class="material-symbols-outlined text-gray-700 dark:text-gray-300">groups</span>
-                            <p class="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">Comisiones
-                            </p>
-                        </a>
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                            href="#">
-                            <span class="material-symbols-outlined text-gray-700 dark:text-gray-300">badge</span>
-                            <p class="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">Referentes
-                            </p>
-                        </a>
-                    </nav>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <div class="admin-main-content flex-1 grid grid-rows-[auto_1fr_auto] h-full">
-                <!-- TopNavBar -->
-                <header
-                    class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-gray-800 px-4 md:px-8 py-3 bg-white dark:bg-background-dark sticky top-0 z-10">
-                    <div class="flex items-center gap-4 text-gray-900 dark:text-gray-50">
-                        <!-- Botón hamburguesa para móviles -->
-                        <button id="toggle-sidebar" class="md:hidden p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
-                            <span class="material-symbols-outlined">menu</span>
-                        </button>
-                        <h2 class="text-base md:text-lg font-bold leading-tight tracking-[-0.015em]">Panel de Administración
-                        </h2>
-                    </div>
-                    <div class="flex items-center gap-2 md:gap-4">
-                        <div
-                            class="flex min-w-[84px] max-w-[200px] md:max-w-[480px] items-center justify-center overflow-hidden rounded-lg h-10 px-2 md:px-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-50 text-xs md:text-sm font-bold leading-normal tracking-[0.015em]">
-                            <span class="truncate">
-                                {% if user.is_authenticated %}
-                                Bienvenido, {% firstof user.get_short_name user.get_username %}
-                                {% else %}
-                                Bienvenido
-                                {% endif %}
-                            </span>
-                        </div>
-                        {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'admin:logout' %}" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit"
-                                class="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 bg-transparent cursor-pointer transition-colors">
-                                <span class="material-symbols-outlined text-sm">logout</span>
-                                <span class="hidden sm:inline text-sm font-medium">Cerrar sesión</span>
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </header>
-
-                <main class="overflow-auto p-4 md:p-8">
-                    <div class="w-full max-w-7xl mx-auto">
-                        {% block content %}
-                        <!-- Breadcrumbs -->
-                        <div class="flex flex-wrap gap-2 mb-6">
-                            <a class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal hover:text-primary"
-                                href="{% url 'admin:index' %}">Inicio</a>
-                            <span class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">/</span>
-                            <span
-                                class="text-gray-900 dark:text-gray-50 text-sm font-medium leading-normal">Sedes</span>
-                        </div>
-
-                        <!-- PageHeading -->
-                        <div class="flex flex-wrap justify-between gap-4 mb-8">
-                            <div class="flex min-w-72 flex-col gap-2">
-                                <p
-                                    class="text-gray-900 dark:text-gray-50 text-3xl font-black leading-tight tracking-[-0.033em]">
-                                    Sedes</p>
-                                <p class="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">
-                                    Gestiona las sedes y comisiones del Plan FinEs.</p>
-                            </div>
-                            <button
-                                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
-                                <span class="truncate">Agregar Sede</span>
-                            </button>
-                        </div>
-
-                        <!-- Content Card (Table and search) -->
-                        <div
-                            class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-                            <!-- SearchBar -->
-                            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-                                <label class="flex flex-col min-w-40 h-11 w-full max-w-sm">
-                                    <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
-                                        <div
-                                            class="text-gray-500 dark:text-gray-400 flex bg-background-light dark:bg-background-dark items-center justify-center pl-4 rounded-l-lg">
-                                            <span class="material-symbols-outlined">search</span>
-                                        </div>
-                                        <input
-                                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-background-light dark:bg-background-dark h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 pl-2 text-sm font-normal leading-normal"
-                                            placeholder="Buscar por nombre o dirección" value="" />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- Table -->
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                    <thead
-                                        class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th class="px-6 py-3" scope="col">Nombre de la Sede</th>
-                                            <th class="px-6 py-3" scope="col">Dirección</th>
-                                            <th class="px-6 py-3" scope="col">Localidad</th>
-                                            <th class="px-6 py-3" scope="col">Comisiones</th>
-                                            <th class="px-6 py-3" scope="col"><span class="sr-only">Actions</span></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr
-                                            class="bg-white dark:bg-gray-900 border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                                                scope="row">Escuela Secundaria N° 7</th>
-                                            <td class="px-6 py-4">Av. Siempreviva 742</td>
-                                            <td class="px-6 py-4">Quilmes</td>
-                                            <td class="px-6 py-4">3</td>
-                                            <td class="px-6 py-4 text-right">
-                                                <a class="font-medium text-primary hover:underline" href="#">Editar</a>
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            class="bg-white dark:bg-gray-900 border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                                                scope="row">Centro de Formación Profesional N° 401</th>
-                                            <td class="px-6 py-4">Calle Falsa 123</td>
-                                            <td class="px-6 py-4">Berazategui</td>
-                                            <td class="px-6 py-4">5</td>
-                                            <td class="px-6 py-4 text-right">
-                                                <a class="font-medium text-primary hover:underline" href="#">Editar</a>
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            class="bg-white dark:bg-gray-900 border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                                                scope="row">Sociedad de Fomento "El Progreso"</th>
-                                            <td class="px-6 py-4">San Martín 550</td>
-                                            <td class="px-6 py-4">Florencio Varela</td>
-                                            <td class="px-6 py-4">2</td>
-                                            <td class="px-6 py-4 text-right">
-                                                <a class="font-medium text-primary hover:underline" href="#">Editar</a>
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                                                scope="row">Biblioteca Popular "Almafuerte"</th>
-                                            <td class="px-6 py-4">Rivadavia 1234</td>
-                                            <td class="px-6 py-4">Avellaneda</td>
-                                            <td class="px-6 py-4">4</td>
-                                            <td class="px-6 py-4 text-right">
-                                                <a class="font-medium text-primary hover:underline" href="#">Editar</a>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        {% endblock %}
-                    </div>
-                </main>
-
-                <!-- Footer -->
-                <footer
-                    class="bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 py-4 mt-auto"
-                    role="contentinfo">
-                    <div class="container mx-auto px-8 text-center text-sm">
-                        <p>&copy; 2025 FinEs Mapa Interactivo. Todos los derechos reservados.</p>
-                    </div>
-                </footer>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript para menú móvil -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleSidebar = document.getElementById('toggle-sidebar');
-            const closeSidebar = document.getElementById('close-sidebar');
-            const sidebar = document.querySelector('.admin-sidebar');
-            const overlay = document.getElementById('admin-overlay');
-            
-            // Función para mostrar sidebar
-            function showSidebar() {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            }
-            
-            // Función para ocultar sidebar
-            function hideSidebar() {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                document.body.style.overflow = 'auto';
-            }
-            
-            // Event listeners
-            if (toggleSidebar) {
-                toggleSidebar.addEventListener('click', showSidebar);
-            }
-            
-            if (closeSidebar) {
-                closeSidebar.addEventListener('click', hideSidebar);
-            }
-            
-            if (overlay) {
-                overlay.addEventListener('click', hideSidebar);
-            }
-            
-            // Cerrar con ESC
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && sidebar.classList.contains('show')) {
-                    hideSidebar();
-                }
-            });
-            
-            // Ocultar sidebar al cambiar a desktop
-            window.addEventListener('resize', function() {
-                if (window.innerWidth >= 768) {
-                    hideSidebar();
-                }
-            });
-        });
-    </script>
-</body>
-
-</html>
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Dashboard link */
+    .dashboard-link-header {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #2424eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.375rem;
+        transition: background-color 0.2s;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-left: 1rem;
+    }
+    .dashboard-link-header:hover {
+        background-color: #1818c0;
+        color: white;
+    }
+    .dashboard-link-header svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-right: 0.5rem;
+    }
+    
+    /* ============================================
+       MEJORAS PARA LOS FORMULARIOS DEL ADMIN
+       ============================================ */
+    
+    /* Alinear botones inline horizontalmente */
+    .related-widget-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    
+    .related-widget-wrapper select,
+    .related-widget-wrapper input[type="text"] {
+        flex: 1 !important;
+        min-width: 200px !important;
+    }
+    
+    /* Mejorar botones inline (editar, agregar, eliminar, ver) */
+    .related-widget-wrapper-link {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important;
+        height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #f3f4f6 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.375rem !important;
+        transition: all 0.2s !important;
+        text-decoration: none !important;
+    }
+    
+    .related-widget-wrapper-link:hover {
+        background-color: #2424eb !important;
+        border-color: #2424eb !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(36, 36, 235, 0.2);
+    }
+    
+    .related-widget-wrapper-link:hover img {
+        filter: brightness(0) invert(1) !important;
+    }
+    
+    .related-widget-wrapper-link img {
+        width: 16px !important;
+        height: 16px !important;
+        opacity: 0.7;
+        transition: all 0.2s !important;
+    }
+    
+    /* Mejorar fieldsets */
+    fieldset.module {
+        background-color: white !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    }
+    
+    fieldset.module h2 {
+        background-color: #f9fafb !important;
+        padding: 0.625rem 1rem !important;
+        margin: -1rem -1rem 0.75rem -1rem !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+    }
+    
+    /* Grid layout para organizar los campos */
+    fieldset.module .form-row {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+        gap: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+        align-items: start !important;
+    }
+    
+    /* Campos que ocupan todo el ancho (full-width) */
+    fieldset.module .form-row.full-width,
+    fieldset.module .form-row:has(textarea),
+    fieldset.module .form-row:has(.vLargeTextField),
+    fieldset.module .form-row:has(.vTextField[style*="width: 100%"]),
+    fieldset.module .form-row:has(input[type="text"][style*="width: 100%"]) {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Campos que deben estar en una sola columna (como coordenadas) */
+    fieldset.module .form-row:has(input[name="lat"]),
+    fieldset.module .form-row:has(input[name="long"]) {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Mejorar form rows */
+    .form-row {
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+    }
+    
+    .form-row label {
+        font-weight: 500 !important;
+        color: #374151 !important;
+        margin-bottom: 0.375rem !important;
+        display: block !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Asegurar que los divs dentro de form-row no rompan el grid */
+    .form-row > div {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Mejorar campos de input */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="url"],
+    select,
+    textarea {
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.375rem !important;
+        padding: 0.5rem 0.75rem !important;
+        transition: all 0.2s !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="email"]:focus,
+    input[type="url"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #2424eb !important;
+        box-shadow: 0 0 0 3px rgba(36, 36, 235, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Mejorar submit row */
+    .submit-row {
+        background-color: #f9fafb !important;
+        padding: 0.875rem 1rem !important;
+        border-top: 1px solid #e5e7eb !important;
+        border-radius: 0 0 0.5rem 0.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    .submit-row input[type="submit"],
+    .submit-row button {
+        padding: 0.65rem 1.5rem !important;
+        font-weight: 500 !important;
+        border-radius: 0.375rem !important;
+        transition: all 0.2s !important;
+        border: none !important;
+    }
+    
+    .submit-row input[type="submit"]:hover,
+    .submit-row button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    
+    .submit-row input[name="_save"] {
+        background-color: #2424eb !important;
+        color: white !important;
+    }
+    
+    .submit-row input[name="_save"]:hover {
+        background-color: #1818c0 !important;
+    }
+    
+    /* Mejorar help text */
+    .help,
+    p.help {
+        color: #6b7280 !important;
+        font-size: 0.8125rem !important;
+        margin-top: 0.25rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Reducir espaciado en campos de checkbox y radio */
+    .form-row input[type="checkbox"],
+    .form-row input[type="radio"] {
+        margin-top: 0.25rem !important;
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Ajustar campos de fecha y hora */
+    .form-row .datetime {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* Reducir padding en el formulario principal */
+    #content {
+        padding: 1rem !important;
+    }
+    
+    /* Ajustar el contenedor del formulario */
+    .module {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Mejorar errores */
+    .errorlist {
+        background-color: #fef2f2 !important;
+        border: 1px solid #fecaca !important;
+        border-radius: 0.375rem !important;
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .errorlist li {
+        color: #dc2626 !important;
+        font-weight: 500 !important;
+    }
+</style>
+{% endblock %}
