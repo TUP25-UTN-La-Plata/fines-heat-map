@@ -114,3 +114,5 @@ class SedeModelTest(TestCase):
         )
         self.assertIn("Sede Norte", str(sede))
         self.assertIn("Villa Elvira", str(sede))
+        self.assertIn("Escuela", str(sede))   # sede_tipo
+        self.assertIn("Calle 789", str(sede)) # direccion

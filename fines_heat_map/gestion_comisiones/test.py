@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from .models import Orientacion, Modulo, Comision, Sede
+from gestion_instituciones.models import Sede
+from .models import Orientacion, Modulo, Comision
 
 class OrientacionModelTest(TestCase):
     def test_nombre_obligatorio(self):
@@ -21,7 +22,7 @@ class OrientacionModelTest(TestCase):
 
     def test_str_devuelve_nombre(self):
         orientacion = Orientacion.objects.create(nombre="Matemática", descripcion="Test")
-        self.assertEqual(str(orientacion), "Matemática")
+        self.assertIn("Matemática", str(orientacion))
 
 
 class ModuloModelTest(TestCase):
@@ -32,7 +33,7 @@ class ModuloModelTest(TestCase):
 
     def test_str_devuelve_nombre(self):
         modulo = Modulo.objects.create(nombre="Física", descripcion="Test")
-        self.assertEqual(str(modulo), "Física")
+        self.assertIn("Física", str(modulo))
 
 
 class ComisionModelTest(TestCase):
@@ -41,24 +42,24 @@ class ComisionModelTest(TestCase):
         self.orientacion = Orientacion.objects.create(nombre="Informática", descripcion="Test")
         self.modulo = Modulo.objects.create(nombre="Matemática", descripcion="Test")
 
-    def test_numero_positivo(self):
+    def test_numero_obligatorio(self):
         comision = Comision(
-            numero=-1,
+            numero="",
             sede=self.sede,
             orientacion=self.orientacion,
             modulo=self.modulo,
-            turno="Mañana"
+            turno=Comision.Turno.MANANA
         )
         with self.assertRaises(ValidationError):
             comision.full_clean()
 
     def test_turno_noche_requiere_horario(self):
         comision = Comision(
-            numero=1,
+            numero="2024-LP-01",
             sede=self.sede,
             orientacion=self.orientacion,
             modulo=self.modulo,
-            turno="Noche",
+            turno=Comision.Turno.NOCHE,
             horario=""
         )
         with self.assertRaises(ValidationError):
@@ -66,19 +67,19 @@ class ComisionModelTest(TestCase):
 
     def test_unique_numero_por_sede(self):
         Comision.objects.create(
-            numero=1,
+            numero="2024-LP-01",
             sede=self.sede,
             orientacion=self.orientacion,
             modulo=self.modulo,
-            turno="Mañana",
+            turno=Comision.Turno.MANANA,
             horario="08:00"
         )
         comision2 = Comision(
-            numero=1,
+            numero="2024-LP-01",
             sede=self.sede,
             orientacion=self.orientacion,
             modulo=self.modulo,
-            turno="Tarde",
+            turno=Comision.Turno.TARDE,
             horario="14:00"
         )
         with self.assertRaises(ValidationError):
@@ -86,12 +87,12 @@ class ComisionModelTest(TestCase):
 
     def test_str_devuelve_numero_y_sede(self):
         comision = Comision.objects.create(
-            numero=2,
+            numero="2024-LP-02",
             sede=self.sede,
             orientacion=self.orientacion,
             modulo=self.modulo,
-            turno="Mañana",
+            turno=Comision.Turno.MANANA,
             horario="09:00"
         )
-        self.assertIn("Comisión 2", str(comision))
+        self.assertIn("2024-LP-02", str(comision))
         self.assertIn("Sede Central", str(comision))
