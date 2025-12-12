@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from .forms import InstitucionFilterForm
 
 # ====== DATOS DE PRUEBA - ACTIVAR/DESACTIVAR AQUÍ ======
-USE_TEST_DATA = True  # Cambiar a False para volver al estado original
+USE_TEST_DATA = False  # Cambiar a False para volver al estado original
 
 
 def get_test_data():

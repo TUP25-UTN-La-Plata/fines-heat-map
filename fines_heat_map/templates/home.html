@@ -16,10 +16,13 @@
     .map-controls {
         position: absolute;
         top: 20px;
-        left: 20px;
-        right: 20px;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 999999;
         pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .map-controls>* {
@@ -30,21 +33,47 @@
     .search-container {
         background: white;
         border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
         margin-bottom: 16px;
         max-width: 400px;
         position: relative;
         z-index: 1000;
+        overflow: hidden;
     }
 
-    /* Botones de filtro */
+    /* Botón de búsqueda */
+    #search-button {
+        border-radius: 0;
+    }
+
+    /* Asegurar que el botón de filtros móvil tenga esquinas redondeadas */
+    #filters-toggle {
+        border-radius: 0 8px 8px 0;
+        position: relative;
+        z-index: 999999999 !important;
+        pointer-events: auto !important;
+    }
+
+    /* Input de búsqueda sin rounded cuando hay botones */
+    #main-search {
+        border-radius: 8px 0 0 8px;
+    }
+
+    /* Botones de filtro - solo escritorio */
     .filter-buttons {
-        display: flex;
+        display: none;
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 16px;
         position: relative;
         z-index: 5000;
+    }
+    
+    /* Mostrar filtros en escritorio */
+    @media (min-width: 768px) {
+        .filter-buttons {
+            display: flex;
+        }
     }
 
     .filter-btn {
@@ -58,11 +87,15 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     .filter-btn:hover {
-        background: #f9fafb;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background: #dbeafe;
+        border-color: #3b82f6;
+        color: #1e40af;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+        transform: translateY(-1px);
     }
 
     .filter-btn.active {
@@ -81,8 +114,11 @@
     }
 
     .reset-btn:hover {
-        background: #f9fafb;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
+        box-shadow: 0 4px 8px rgba(156, 163, 175, 0.15);
+        transform: translateY(-1px);
     }
 
     .filter-dropdown {
@@ -147,42 +183,67 @@
 
     /* Panel de filtros expandible */
     .filter-panel {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
+        position: fixed;
+        top: 60px;
+        left: 10px;
+        right: 10px;
         background: white;
         border-radius: 8px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        max-height: 400px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        max-height: 70vh;
         overflow-y: auto;
         padding: 16px;
-        transform: translateY(-8px);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 9999998;
+        z-index: 99999999 !important;
+        display: none;
+        border: 2px solid #3b82f6;
     }
 
     .filter-panel.show {
-        transform: translateY(0);
-        opacity: 1;
-        visibility: visible;
+        display: block !important;
     }
 
     /* Controles del mapa de calor */
     .heatmap-controls {
         position: absolute;
-        bottom: 20px;
-        left: 20px;
+        bottom: 80px;
+        right: 20px;
         z-index: 10000;
     }
 
     .heatmap-toggle {
-        background: white;
+        background: #fef2f2;
+        border: 2px solid #fecaca;
         border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        padding: 12px;
+        box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 12px 16px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #dc2626;
+        font-weight: 500;
+    }
+
+    .heatmap-toggle:hover {
+        background: #fee2e2;
+        border-color: #f87171;
+        box-shadow: 0 6px 12px rgba(220, 38, 38, 0.15);
+        transform: translateY(-2px);
+        color: #b91c1c;
+    }
+
+    .heatmap-toggle.active {
+        background: #dcfce7;
+        border-color: #16a34a;
+        color: #15803d;
+        box-shadow: 0 6px 12px rgba(34, 197, 94, 0.25);
+    }
+
+    .heatmap-toggle.active:hover {
+        background: #bbf7d0;
+        border-color: #15803d;
+        color: #166534;
+        transform: translateY(-2px);
     }
 
     /* Responsive */
@@ -191,23 +252,22 @@
             left: 10px;
             right: 10px;
             top: 10px;
+            transform: none;
+            align-items: stretch;
+        }
+
+        .search-container {
+            max-width: none;
         }
 
         .heatmap-controls {
-            bottom: 10px;
-            left: 10px;
+            bottom: 70px;
+            right: 10px;
         }
 
+        /* Ocultar filtros rápidos en móvil */
         .filter-buttons {
-            max-width: calc(100vw - 100px);
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        .filter-buttons::-webkit-scrollbar {
-            display: none;
+            display: none !important;
         }
     }
 
@@ -244,9 +304,17 @@
             <form method="get" id="search-form" class="flex">
                 <input type="text" name="search" id="main-search" value="{{ form.search.value|default:'' }}"
                     placeholder="Buscar instituciones, tutores o comisiones..."
-                    class="flex-1 px-4 py-3 border-none rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="flex-1 px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Botón de búsqueda -->
+                <button type="submit" id="search-button"
+                    class="px-4 py-3 bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </button>
+                <!-- Botón de filtros - solo visible en móvil -->
                 <button type="button" id="filters-toggle"
-                    class="px-4 py-3 border-l border-gray-200 text-gray-500 hover:text-gray-700 rounded-r-lg">
+                    class="md:hidden px-4 py-3 border-l border-gray-200 text-gray-500 hover:text-gray-700 rounded-r-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894L9 17.382A1 1 0 019 16.382V13.414a1 1 0 00-.293-.707L2.293 6.293A1 1 0 012 5.586V4z">
@@ -261,8 +329,8 @@
                     value="{{ form.orientation.value|default:'' }}">
             </form>
 
-            <!-- Panel de filtros expandible -->
-            <div id="filter-panel" class="filter-panel">
+            <!-- Panel de filtros expandible - solo móvil -->
+            <div id="filter-panel" class="filter-panel md:hidden">
                 <h2 class="text-base font-semibold text-gray-800 mb-2">Filtros</h2>
                 
                 <!-- Formulario de filtros -->
@@ -276,6 +344,7 @@
                             <option value="">Todos los turnos</option>
                             <option value="Mañana">Mañana</option>
                             <option value="Tarde">Tarde</option>
+                            <option value="Vespertino">Vespertino</option>
                             <option value="Noche">Noche</option>
                         </select>
                     </div>
@@ -287,12 +356,7 @@
                         <select name="modules" id="filter-modules"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs">
                             <option value="">Todos los módulos</option>
-                            <option value="Matemática">Matemática</option>
-                            <option value="Lengua">Lengua</option>
-                            <option value="Historia">Historia</option>
-                            <option value="Biología">Biología</option>
-                            <option value="Química">Química</option>
-                            <option value="Física">Física</option>
+                            <!-- Opciones dinámicas se agregarán aquí -->
                         </select>
                     </div>
 
@@ -303,12 +367,7 @@
                         <select name="orientation" id="filter-orientation"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs">
                             <option value="">Todas las orientaciones</option>
-                            <option value="Ciencias Sociales">Ciencias Sociales</option>
-                            <option value="Ciencias Naturales">Ciencias Naturales</option>
-                            <option value="Economía y Administración">Economía y Administración</option>
-                            <option value="Arte">Arte</option>
-                            <option value="Comunicación">Comunicación</option>
-                            <option value="Técnica">Técnica</option>
+                            <!-- Opciones dinámicas se agregarán aquí -->
                         </select>
                     </div>
                     
@@ -332,17 +391,115 @@
             </div>
         </div>
 
+        <!-- Filtros rápidos para escritorio -->
+        <div class="filter-buttons hidden md:flex">
+            <!-- Filtro de Turno -->
+            <div class="filter-dropdown" data-dropdown="turno">
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="turno-dropdown" id="turno-toggle">
+                    <span id="turno-label">
+                        {% if form.turno.value %}
+                            {{ form.turno.value }}
+                        {% else %}
+                            Turno
+                        {% endif %}
+                    </span>
+                    <svg class="w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="turno-dropdown" class="dropdown-menu hidden">
+                    <div class="dropdown-option" data-value="">
+                        <input type="radio" name="turno_quick" value="" id="turno_all" {% if not form.turno.value %}checked{% endif %}>
+                        <span>Todos los turnos</span>
+                    </div>
+                    <div class="dropdown-option" data-value="Mañana">
+                        <input type="radio" name="turno_quick" value="Mañana" id="turno_manana" {% if form.turno.value == "Mañana" %}checked{% endif %}>
+                        <span>Mañana</span>
+                    </div>
+                    <div class="dropdown-option" data-value="Tarde">
+                        <input type="radio" name="turno_quick" value="Tarde" id="turno_tarde" {% if form.turno.value == "Tarde" %}checked{% endif %}>
+                        <span>Tarde</span>
+                    </div>
+                    <div class="dropdown-option" data-value="Vespertino">
+                        <input type="radio" name="turno_quick" value="Vespertino" id="turno_vespertino" {% if form.turno.value == "Vespertino" %}checked{% endif %}>
+                        <span>Vespertino</span>
+                    </div>
+                    <div class="dropdown-option" data-value="Noche">
+                        <input type="radio" name="turno_quick" value="Noche" id="turno_noche" {% if form.turno.value == "Noche" %}checked{% endif %}>
+                        <span>Noche</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtro de Módulos -->
+            <div class="filter-dropdown" data-dropdown="modules">
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="modules-dropdown" id="modules-toggle">
+                    <span id="modules-label">
+                        {% if form.modules.value %}
+                            {{ form.modules.value }}
+                        {% else %}
+                            Módulo
+                        {% endif %}
+                    </span>
+                    <svg class="w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="modules-dropdown" class="dropdown-menu hidden">
+                    <div class="dropdown-option" data-value="">
+                        <input type="radio" name="modules_quick" value="" id="modules_all" checked>
+                        <span>Todos los módulos</span>
+                    </div>
+                    <!-- Opciones dinámicas se agregarán aquí -->
+                </div>
+            </div>
+
+            <!-- Filtro de Orientación -->
+            <div class="filter-dropdown" data-dropdown="orientation">
+                <button type="button" class="filter-btn dropdown-toggle" data-dropdown-toggle="orientation-dropdown" id="orientation-toggle">
+                    <span id="orientation-label">
+                        {% if form.orientation.value %}
+                            {{ form.orientation.value }}
+                        {% else %}
+                            Orientación
+                        {% endif %}
+                    </span>
+                    <svg class="w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="orientation-dropdown" class="dropdown-menu hidden">
+                    <div class="dropdown-option" data-value="">
+                        <input type="radio" name="orientation_quick" value="" id="orientation_all" checked>
+                        <span>Todas las orientaciones</span>
+                    </div>
+                    <!-- Opciones dinámicas se agregarán aquí -->
+                </div>
+            </div>
+
+            <!-- Botón para limpiar todos los filtros -->
+            <button type="button" class="filter-btn reset-btn" id="reset-all-filters">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Limpiar
+            </button>
+        </div>
+
         </div>
     </div>
 
     <!-- Control de mapa de calor -->
     <div class="heatmap-controls">
-        <div class="heatmap-toggle">
-            <label class="flex items-center cursor-pointer">
-                <input type="checkbox" id="heatmap-toggle" {% if show_heatmap %}checked{% endif %} class="mr-2">
-                <span class="text-sm font-medium text-gray-700">Mapa de calor</span>
-            </label>
-        </div>
+        <button type="button" id="heatmap-toggle" 
+                class="heatmap-toggle{% if show_heatmap %} active{% endif %}"
+                data-active="{% if show_heatmap %}true{% else %}false{% endif %}">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <span class="text-sm font-medium">Mapa de calor</span>
+        </button>
     </div>
 </div>
 
@@ -433,6 +590,49 @@
                 this.style.backgroundColor = 'white';
             });
         });
+        
+        // FILTROS RÁPIDOS PARA ESCRITORIO
+        document.querySelectorAll('.dropdown-option').forEach(function(option) {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const radio = this.querySelector('input[type="radio"]');
+                const dropdown = this.closest('.dropdown-menu');
+                const dropdownId = dropdown.id;
+                const filterType = dropdownId.replace('-dropdown', '');
+                const value = this.getAttribute('data-value');
+                const label = this.querySelector('span').textContent;
+                
+                // Seleccionar este radio
+                radio.checked = true;
+                
+                // Actualizar el label del botón
+                const labelElement = document.getElementById(filterType + '-label');
+                if (labelElement) {
+                    labelElement.textContent = value === '' ? 
+                        (filterType === 'turno' ? 'Turno' : 
+                         filterType === 'modules' ? 'Módulo' : 
+                         'Orientación') : label;
+                }
+                
+                // Actualizar el campo hidden correspondiente
+                const hiddenField = document.getElementById('quick-' + filterType);
+                if (hiddenField) {
+                    hiddenField.value = value;
+                }
+                
+                // Cerrar dropdown
+                dropdown.classList.add('hidden');
+                dropdown.style.display = 'none';
+                
+                // Remover clase active del toggle
+                document.querySelector(`[data-dropdown-toggle="${dropdownId}"]`).classList.remove('active');
+                
+                // Aplicar filtros automáticamente
+                fetchAndUpdateMap();
+            });
+        });
 
         // MODAL DE FILTROS MÓVILES
         const mobileMapFiltersBtn = document.querySelector('[data-mobile-map-filters-toggle]');
@@ -481,14 +681,13 @@
                     }
                 });
                 
-                // Cerrar modal y enviar formulario
+                // Cerrar modal y aplicar filtros
                 mobileMapFiltersModal.classList.add('hidden');
                 mobileMapFiltersModal.style.display = 'none';
                 document.body.style.overflow = 'auto';
-                const searchForm = document.getElementById('search-form');
-                if (searchForm) {
-                    searchForm.submit();
-                }
+                
+                // Aplicar filtros
+                fetchAndUpdateMap();
             });
         }
 
@@ -505,6 +704,312 @@
             });
         }
 
+        // VARIABLES GLOBALES PARA FETCH DINÁMICO
+        let fetchTimeout;
+        const API_URL = '/mapa/api/sedes/';
+        let moduloMap = {}; // { "Módulo 1": 1, "Módulo 2": 2, ... }
+        let orientacionMap = {}; // { "Cs. Sociales": 1, "Gest. y Adm.": 2, ... }
+        let turnoMap = {
+            'Mañana': 'm',
+            'Tarde': 't', 
+            'Vespertino': 'v',
+            'Noche': 'n'
+        };
+        
+        // FUNCIÓN PARA INICIALIZAR FILTROS DINÁMICOS
+        function initializeFilters() {
+            console.log('Inicializando filtros dinámicos...');
+            fetch(API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    populateDropdowns(data);
+                    updateMapWithData(data); // Mostrar datos iniciales
+                })
+                .catch(error => {
+                    console.error('Error al inicializar filtros:', error);
+                    // Fallback a datos estáticos si falla
+                    fetchAndUpdateMap();
+                });
+        }
+        
+        // FUNCIÓN PARA POBLAR DROPDOWNS CON DATOS REALES
+        function populateDropdowns(sedesData) {
+            const modulos = new Set();
+            const orientaciones = new Set();
+            const turnos = new Set();
+            const moduloToId = {};
+            const orientacionToId = {};
+            
+            // Extraer valores únicos de todas las comisiones
+            sedesData.forEach(sede => {
+                sede.comisiones.forEach(comision => {
+                    if (comision.modulo_nombre) {
+                        modulos.add(comision.modulo_nombre);
+                        moduloToId[comision.modulo_nombre] = comision.id; // Usar ID de comisión como moduloID
+                    }
+                    if (comision.orientacion_nombre) {
+                        orientaciones.add(comision.orientacion_nombre);
+                        orientacionToId[comision.orientacion_nombre] = comision.id; // Usar ID de comisión como orientacionID
+                    }
+                    if (comision.turno_nombre) {
+                        turnos.add(comision.turno_nombre);
+                    }
+                });
+            });
+            
+            // Guardar mapeos globales
+            moduloMap = moduloToId;
+            orientacionMap = orientacionToId;
+            
+            console.log('Módulos encontrados:', Array.from(modulos));
+            console.log('Orientaciones encontradas:', Array.from(orientaciones));
+            console.log('Turnos encontrados:', Array.from(turnos));
+            
+            // Poblar dropdowns de módulos
+            populateSelect('modules-dropdown', modulos, 'Módulo');
+            populateSelect('filter-modules', modulos, 'modules');
+            
+            // Poblar dropdowns de orientaciones
+            populateSelect('orientation-dropdown', orientaciones, 'Orientación');
+            populateSelect('filter-orientation', orientaciones, 'orientation');
+            
+            // Actualizar turnos si hay nuevos
+            updateTurnoDropdowns(turnos);
+        }
+        
+        // FUNCIÓN HELPER PARA POBLAR UN SELECT
+        function populateSelect(containerId, values, type) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (containerId.includes('dropdown')) {
+                // Dropdown de escritorio
+                const existingOptions = container.querySelectorAll('.dropdown-option');
+                existingOptions.forEach((option, index) => {
+                    if (index === 0) return; // Mantener "Todos los..."
+                    option.remove();
+                });
+                
+                Array.from(values).sort().forEach(value => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'dropdown-option';
+                    optionDiv.setAttribute('data-value', value);
+                    optionDiv.innerHTML = `
+                        <input type="radio" name="${type}_quick" value="${value}" id="${type}_${value.replace(/\s+/g, '_')}">
+                        <span>${value}</span>
+                    `;
+                    container.appendChild(optionDiv);
+                    
+                    // Agregar event listener
+                    optionDiv.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const radio = this.querySelector('input[type="radio"]');
+                        const dropdown = this.closest('.dropdown-menu');
+                        const dropdownId = dropdown.id;
+                        const filterType = dropdownId.replace('-dropdown', '');
+                        const value = this.getAttribute('data-value');
+                        const label = this.querySelector('span').textContent;
+                        
+                        radio.checked = true;
+                        
+                        const labelElement = document.getElementById(filterType + '-label');
+                        if (labelElement) {
+                            labelElement.textContent = value === '' ? 
+                                (filterType === 'turno' ? 'Turno' : 
+                                 filterType === 'modules' ? 'Módulo' : 
+                                 'Orientación') : label;
+                        }
+                        
+                        const hiddenField = document.getElementById('quick-' + filterType);
+                        if (hiddenField) {
+                            hiddenField.value = value;
+                        }
+                        
+                        dropdown.classList.add('hidden');
+                        dropdown.style.display = 'none';
+                        document.querySelector(`[data-dropdown-toggle="${dropdownId}"]`).classList.remove('active');
+                        
+                        fetchAndUpdateMap();
+                    });
+                });
+                
+            } else {
+                // Select de móvil
+                const existingOptions = container.querySelectorAll('option');
+                existingOptions.forEach((option, index) => {
+                    if (index === 0) return; // Mantener "Todos los..."
+                    option.remove();
+                });
+                
+                Array.from(values).sort().forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    container.appendChild(option);
+                });
+            }
+        }
+        
+        // FUNCIÓN PARA ACTUALIZAR DROPDOWNS DE TURNO
+        function updateTurnoDropdowns(turnos) {
+            // Actualizar mapeo de turnos si hay nuevos
+            turnos.forEach(turno => {
+                if (!turnoMap[turno]) {
+                    // Asignar código por defecto si no existe
+                    const firstLetter = turno.toLowerCase().charAt(0);
+                    turnoMap[turno] = firstLetter;
+                }
+            });
+            
+            console.log('Mapeo de turnos actualizado:', turnoMap);
+        }
+        // FUNCIÓN PRINCIPAL PARA FETCH Y ACTUALIZACIÓN DEL MAPA
+        // FUNCIÓN PRINCIPAL PARA FETCH Y ACTUALIZACIÓN DEL MAPA
+        function fetchAndUpdateMap() {
+            // Recopilar parámetros de filtro
+            const searchText = document.getElementById('main-search').value.trim();
+            const turno = document.getElementById('quick-turno').value || 
+                         document.getElementById('filter-turno')?.value || '';
+            const modules = document.getElementById('quick-modules').value || 
+                           document.getElementById('filter-modules')?.value || '';
+            const orientation = document.getElementById('quick-orientation').value || 
+                               document.getElementById('filter-orientation')?.value || '';
+            
+            // Construir URL según si hay búsqueda o no
+            let url;
+            const params = new URLSearchParams();
+            
+            if (searchText) {
+                // Si hay búsqueda: /mapa/api/sedes/buscar/?nombre=texto&otros_parametros
+                url = '/mapa/api/sedes/buscar/';
+                params.append('nombre', searchText);
+            } else {
+                // Si no hay búsqueda: /mapa/api/sedes/?otros_parametros
+                url = API_URL;
+            }
+            
+            // Agregar otros parámetros
+            if (turno) params.append('turno', turnoMap[turno] || '');
+            if (modules && moduloMap[modules]) params.append('moduloID', moduloMap[modules]);
+            if (orientation && orientacionMap[orientation]) params.append('orientacionID', orientacionMap[orientation]);
+            
+            // URL final
+            const finalUrl = params.toString() ? `${url}?${params.toString()}` : url;
+            
+            console.log('Fetching:', finalUrl);
+            console.log('Parámetros:', { searchText, turno, modules, orientation });
+            console.log('Mapeos:', { turnoMap, moduloMap, orientacionMap });
+            
+            // Hacer petición
+            fetch(finalUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos recibidos:', data);
+                    updateMapWithData(data);
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos:', error);
+                });
+        }
+        
+        // FUNCIÓN PARA ACTUALIZAR EL MAPA CON NUEVOS DATOS
+        function updateMapWithData(sedesData) {
+            console.log('Actualizando mapa con datos:', sedesData);
+            console.log('Cantidad de sedes recibidas:', sedesData.length);
+            
+            // Limpiar markers existentes
+            if (typeof clearMapMarkers === 'function') {
+                clearMapMarkers();
+                console.log('Markers existentes limpiados');
+            } else {
+                console.warn('Función clearMapMarkers no disponible');
+                // Fallback: intentar limpiar manualmente
+                if (typeof map !== 'undefined' && map.eachLayer) {
+                    map.eachLayer(function (layer) {
+                        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+                    console.log('Fallback: markers limpiados manualmente');
+                }
+            }
+            
+            // Convertir datos de sedes a formato esperado por el mapa
+            const mapData = [];
+            sedesData.forEach(sede => {
+                console.log('Procesando sede:', sede.nombre);
+                
+                // Crear un punto por cada comisión
+                sede.comisiones.forEach(comision => {
+                    mapData.push({
+                        id: `${sede.id}_${comision.id}`,
+                        name: sede.nombre,
+                        commission_number: comision.numero,
+                        city: sede.localidad_nombre,
+                        province: sede.partido_nombre,
+                        turno: comision.turno_nombre,
+                        address: sede.direccion,
+                        lat: sede.lat,
+                        lng: sede.long,
+                        modules: [comision.modulo_nombre],
+                        orientation: comision.orientacion_nombre
+                    });
+                });
+                
+                // Si no hay comisiones, crear punto solo con sede
+                if (sede.comisiones.length === 0) {
+                    mapData.push({
+                        id: sede.id,
+                        name: sede.nombre,
+                        commission_number: '',
+                        city: sede.localidad_nombre,
+                        province: sede.partido_nombre,
+                        turno: '',
+                        address: sede.direccion,
+                        lat: sede.lat,
+                        lng: sede.long,
+                        modules: [],
+                        orientation: ''
+                    });
+                }
+            });
+            
+            console.log('Datos convertidos para el mapa:', mapData);
+            console.log('Cantidad de puntos a mostrar:', mapData.length);
+            
+            // Actualizar mapa
+            if (typeof addPlacesToMap === 'function') {
+                addPlacesToMap(mapData);
+                console.log('Función addPlacesToMap ejecutada');
+            } else {
+                console.warn('Función addPlacesToMap no disponible');
+                // Fallback: agregar markers manualmente
+                if (typeof map !== 'undefined') {
+                    mapData.forEach(place => {
+                        if (place.lat && place.lng) {
+                            L.marker([place.lat, place.lng])
+                                .addTo(map)
+                                .bindPopup(`<strong>${place.name}</strong><br>${place.address}`);
+                        }
+                    });
+                    console.log('Fallback: markers agregados manualmente');
+                }
+            }
+        }
+        
+        // FUNCIÓN DEBOUNCE PARA BÚSQUEDA
+        function debounce(func, delay) {
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(func, delay);
+        }
+
         // Elementos del DOM
         const heatmapToggle = document.getElementById('heatmap-toggle');
         const filtersToggle = document.getElementById('filters-toggle');
@@ -519,16 +1024,54 @@
         const zoomLevel = parseInt('{{ zoom_level|default:"10" }}');
         const placeName = '{{ place_name|default:""|escapejs }}' || null;
 
-        // Toggle del panel de filtros
-        if (filtersToggle) {
-            filtersToggle.addEventListener('click', function () {
-                filterPanel.classList.toggle('show');
+        // Toggle del panel de filtros (solo móvil)
+        console.log('Elementos encontrados:', {
+            filtersToggle: filtersToggle,
+            filterPanel: filterPanel
+        });
+        
+        if (filtersToggle && filterPanel) {
+            console.log('Event listener agregado al botón de filtros');
+            filtersToggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Toggle clicked - Panel actual:', filterPanel.classList.contains('show'));
+                
+                if (filterPanel.classList.contains('show')) {
+                    filterPanel.classList.remove('show');
+                    console.log('Panel ocultado');
+                } else {
+                    filterPanel.classList.add('show');
+                    console.log('Panel mostrado');
+                }
+            });
+            
+            // Event listener adicional usando event delegation para asegurar que funcione
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('#filters-toggle')) {
+                    console.log('Click detectado via delegation');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (filterPanel.classList.contains('show')) {
+                        filterPanel.classList.remove('show');
+                        console.log('Panel ocultado via delegation');
+                    } else {
+                        filterPanel.classList.add('show');
+                        console.log('Panel mostrado via delegation');
+                    }
+                }
+            });
+        } else {
+            console.error('No se encontraron los elementos necesarios:', {
+                filtersToggle: filtersToggle,
+                filterPanel: filterPanel
             });
         }
 
-        // Cerrar panel al hacer click fuera
+        // Cerrar panel al hacer click fuera (solo móvil)
         document.addEventListener('click', function (e) {
-            if (!e.target.closest('.search-container')) {
+            if (filterPanel && !e.target.closest('.search-container')) {
                 filterPanel.classList.remove('show');
             }
         });
@@ -565,7 +1108,7 @@
             document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
 
             // Aplicar (limpiar filtros)
-            searchForm.submit();
+            fetchAndUpdateMap();
         });
         }
 
@@ -582,9 +1125,38 @@
         document.getElementById('main-search').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                searchForm.submit();
+                fetchAndUpdateMap();
             }
         });
+        
+        // Event listener para el botón de búsqueda (lupa)
+        document.getElementById('search-button').addEventListener('click', function (e) {
+            e.preventDefault();
+            fetchAndUpdateMap();
+        });
+        
+        // Event listener para búsqueda en tiempo real con debounce
+        document.getElementById('main-search').addEventListener('input', function (e) {
+            debounce(fetchAndUpdateMap, 500);
+        });
+        
+        // Event listeners para filtros móviles
+        ['filter-turno', 'filter-modules', 'filter-orientation'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', function() {
+                    // Sincronizar con campos hidden
+                    const hiddenField = document.getElementById('quick-' + id.replace('filter-', ''));
+                    if (hiddenField) {
+                        hiddenField.value = this.value;
+                    }
+                    fetchAndUpdateMap();
+                });
+            }
+        });
+        
+        // Inicializar filtros dinámicos al cargar la página
+        initializeFilters();
 
         // Si hay parámetros específicos, centrar el mapa
         const defaultLat = -34.6037;
@@ -614,18 +1186,32 @@
             }, 1000);
         }
 
-        // Sincronizar estado del checkbox con la variable global heatmapActive en map_scripts.js
-        if (typeof setHeatmapState === 'function') {
-            heatmapToggle.addEventListener('change', function () {
-                setHeatmapState(this.checked);
+        // Manejar toggle del mapa de calor como botón
+        if (typeof setHeatmapState === 'function' && heatmapToggle) {
+            // Event listener para el click del botón
+            heatmapToggle.addEventListener('click', function () {
+                const isActive = this.getAttribute('data-active') === 'true';
+                const newState = !isActive;
+                
+                // Actualizar estado visual
+                this.setAttribute('data-active', newState.toString());
+                if (newState) {
+                    this.classList.add('active');
+                } else {
+                    this.classList.remove('active');
+                }
+                
+                // Llamar función del mapa
+                setHeatmapState(newState);
             });
 
-            // Configurar estado inicial del heatmap basado en el checkbox
-            if (heatmapToggle.checked) {
+            // Configurar estado inicial del heatmap basado en el atributo data-active
+            const initialState = heatmapToggle.getAttribute('data-active') === 'true';
+            if (initialState) {
                 setHeatmapState(true);
             }
         } else {
-            console.warn('La función setHeatmapState no está disponible. Asegurate de que map_scripts.html se cargue correctamente.');
+            console.warn('La función setHeatmapState no está disponible o el elemento heatmap-toggle no existe.');
         }
 
         // Cargar los places y añadirlos al mapa si existen
