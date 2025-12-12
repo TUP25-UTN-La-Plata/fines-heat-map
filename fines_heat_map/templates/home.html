@@ -884,12 +884,12 @@
             let url;
             const params = new URLSearchParams();
             
-            if (searchText) {
-                // Si hay búsqueda: /mapa/api/sedes/buscar/?nombre=texto&otros_parametros
+            // Si hay texto de búsqueda, usar endpoint de búsqueda
+            if (searchText && searchText.length > 0) {
                 url = '/mapa/api/sedes/buscar/';
                 params.append('nombre', searchText);
             } else {
-                // Si no hay búsqueda: /mapa/api/sedes/?otros_parametros
+                // Si NO hay búsqueda, usar endpoint normal para traer TODOS los puntos
                 url = API_URL;
             }
             
@@ -915,12 +915,12 @@
             
             if (orientation) params.append('orientacionID', orientation);  // Enviar orientación directamente
             
-            // URL final
+            // URL final - si hay parámetros, agregarlos; si no, usar URL base
             const finalUrl = params.toString() ? `${url}?${params.toString()}` : url;
             
             console.log('Fetching:', finalUrl);
             console.log('Parámetros:', { searchText, turno, modules, orientation });
-            console.log('Mapeos:', { turnoMap, moduloMap, orientacionMap });
+            console.log('Búsqueda vacía:', !searchText || searchText.length === 0);
             
             // Hacer petición
             fetch(finalUrl)
@@ -932,10 +932,22 @@
                 })
                 .then(data => {
                     console.log('Datos recibidos:', data);
+                    console.log('Cantidad de resultados:', Array.isArray(data) ? data.length : 0);
                     updateMapWithData(data);
                 })
                 .catch(error => {
                     console.error('Error al cargar datos:', error);
+                    // En caso de error, intentar cargar todos los puntos
+                    if (!searchText || searchText.length === 0) {
+                        console.log('Reintentando cargar todos los puntos...');
+                        fetch(API_URL)
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('Datos de fallback recibidos:', data);
+                                updateMapWithData(data);
+                            })
+                            .catch(err => console.error('Error en fallback:', err));
+                    }
                 });
         }
         
