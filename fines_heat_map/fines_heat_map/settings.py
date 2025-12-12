@@ -212,7 +212,7 @@ MAP_CONFIG = {
     "default_zoom": 12,
     "max_zoom": 18,
     "min_zoom": 6,
-    "heatmap_radius": 25,
+    "heatmap_radius": 225,
     "cluster_max_zoom": 15,
 }
 

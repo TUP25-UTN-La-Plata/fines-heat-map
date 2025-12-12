@@ -24,21 +24,21 @@ class ModuloResource(resources.ModelResource):
 
 class ComisionResource(resources.ModelResource):
     sede = fields.Field(
-        column_name='sede',
+        column_name='sede_id',
         attribute='sede',
-        widget=ForeignKeyWidget(Sede, 'nombre')
+        widget=ForeignKeyWidget(Sede, 'nombre')  # Busca por nombre aunque la columna se llame sede_id
     )
     
     orientacion = fields.Field(
-        column_name='orientacion',
+        column_name='orientacion_id',
         attribute='orientacion',
-        widget=ForeignKeyWidget(Orientacion, 'nombre')
+        widget=ForeignKeyWidget(Orientacion, 'id')
     )
     
     modulo = fields.Field(
-        column_name='modulo',
+        column_name='modulo_id',
         attribute='modulo',
-        widget=ForeignKeyWidget(Modulo, 'nombre')
+        widget=ForeignKeyWidget(Modulo, 'id')
     )
     
     def skip_row(self, instance, original, row, import_validation_errors=None):
@@ -47,22 +47,21 @@ class ComisionResource(resources.ModelResource):
         """
         # Verificar si la fila está vacía
         numero = str(row.get('numero', '')).strip() if row.get('numero') else ''
-        sede = str(row.get('sede', '')).strip() if row.get('sede') else ''
-        orientacion = str(row.get('orientacion', '')).strip() if row.get('orientacion') else ''
-        modulo = str(row.get('modulo', '')).strip() if row.get('modulo') else ''
+        sede_id = str(row.get('sede_id', '')).strip() if row.get('sede_id') else ''
+        orientacion_id = str(row.get('orientacion_id', '')).strip() if row.get('orientacion_id') else ''
+        modulo_id = str(row.get('modulo_id', '')).strip() if row.get('modulo_id') else ''
         turno = str(row.get('turno', '')).strip() if row.get('turno') else ''
-        horario = str(row.get('horario', '')).strip() if row.get('horario') else ''
         
         # Si todos los campos principales están vacíos, saltar la fila
-        if not any([numero, sede, orientacion, modulo, turno, horario]):
+        if not any([numero, sede_id, orientacion_id, modulo_id, turno]):
             return True
         
-        # Si falta algún campo requerido, saltar la fila
-        if not numero or not sede or not orientacion or not modulo or not turno or not horario:
+        # Si falta algún campo requerido (horario es opcional ahora), saltar la fila
+        if not numero or not sede_id or not orientacion_id or not modulo_id or not turno:
             return True
         
-        # Validar que el turno sea válido
-        if turno not in ['M', 'T', 'V', 'N']:
+        # Validar que el turno sea válido (incluye 'I' para Intermedio)
+        if turno not in ['M', 'T', 'V', 'N', 'I']:
             return True
         
         return False
