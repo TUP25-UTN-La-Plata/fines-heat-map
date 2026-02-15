@@ -1,0 +1,343 @@
+<script>
+    // Configuración del mapa desde Django settings
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof L === 'undefined') {
+            console.error('Leaflet no está cargado. Asegurate de que los CDNs estén correctos.');
+            return;
+        }
+
+        // Obtener configuración del mapa desde context (si existe) o usar valores por defecto
+        const mapConfig = {% if map_config %}{{ map_config| safe }}{% else %}{
+        "default_center": [-34.9214, -57.9544],
+        "default_zoom": 12,
+        "max_zoom": 18,
+        "min_zoom": 6,
+        "heatMapConfig": {
+            "radius": 70,
+            "blur": 20,
+            "max": 1,
+            "minOpacity": 0.2,
+            "maxZoom": 12,
+            "gradient": { 0.1: 'blue', 0.3: 'lime', 0.5: 'yellow', 0.6: 'orange', 0.8: 'red' }
+        }
+    }{% endif %};
+
+    // Verificar si hay parámetros específicos de ubicación desde la URL
+    const hasSpecificLocation = {% if center_lat and center_lng %}true{% else %}false{% endif %};
+    const specificLocation = hasSpecificLocation ? [{{ center_lat }}, {{ center_lng }}] : null;
+    const specificZoom = {% if zoom_level %}{{ zoom_level }}{% else %}mapConfig.default_zoom{% endif %};
+
+    // Función para obtener la geolocalización del navegador
+    function getBrowserLocation(callback) {
+        const fallbackCenter = [-34.9214, -57.9544];
+        
+        if (!("geolocation" in navigator)) {
+            console.log('Geolocalización no soportada, usando ubicación por defecto');
+            callback(fallbackCenter);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const userLocation = [position.coords.latitude, position.coords.longitude];
+                console.log('Geolocalización obtenida:', userLocation);
+                callback(userLocation);
+            },
+            function(error) {
+                console.log('Error al obtener geolocalización:', error.message);
+                console.log('Usando ubicación por defecto:', fallbackCenter);
+                callback(fallbackCenter);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+
+    // Gradiente rojo único con opacidad variable (se intensifica cuando se solapan)
+    // Guardar el gradiente y opciones originales para mantenerlos constantes
+    const originalGradient = (mapConfig.heatMapConfig && mapConfig.heatMapConfig.gradient) || { 0.0: 'green', 0.5: 'yellow', 1.0: 'red' };
+    const baseBlur = (mapConfig.heatMapConfig && mapConfig.heatMapConfig.blur) || 10;
+    const originalMax = (mapConfig.heatMapConfig && mapConfig.heatMapConfig.max) || 0.8;
+    const originalMinOpacity = (mapConfig.heatMapConfig && mapConfig.heatMapConfig.minOpacity) || 0.2;
+
+    // Función para actualizar el heatmap con radio proporcional al zoom
+    function updateHeatmapRadius() {
+        if (!window.heat || !window.map) return;
+        
+        const currentZoom = window.map.getZoom();
+        const referenceZoom = 12;  // Zoom de referencia
+        const baseRadius = 60;     // Radio en zoom 12
+        
+        // Calcular radio ajustado para mantener área geográfica constante
+        // Fórmula: radius = baseRadius * 2^(currentZoom - referenceZoom)
+        // Cuando haces zoom in (zoom mayor), necesitas más píxeles para la misma área
+        // Cuando haces zoom out (zoom menor), necesitas menos píxeles para la misma área
+        let radiusAtZoom = baseRadius * Math.pow(2, currentZoom - referenceZoom);
+        
+        // Limitar el radio máximo a 180 píxeles
+        const maxRadius = 90;
+        radiusAtZoom = Math.min(radiusAtZoom, maxRadius);
+        
+        // Ajustar blur proporcionalmente al radio para mantener apariencia visual relativa
+        let blurAtZoom = baseBlur * Math.pow(2, currentZoom - referenceZoom);
+        
+        // Limitar el blur proporcionalmente (mantener la misma proporción que el radio)
+        const maxBlur = (baseBlur / baseRadius) * maxRadius;
+        blurAtZoom = Math.min(blurAtZoom, maxBlur);
+        
+        // Guardar los datos actuales del heatmap
+        const currentData = window.heat._latlngs || [];
+        const wasOnMap = window.map.hasLayer(window.heat);
+        
+        // Remover la capa del mapa
+        if (wasOnMap) {
+            window.map.removeLayer(window.heat);
+        }
+        
+        // Recrear la capa con las nuevas opciones para forzar redraw completo
+        window.heat = L.heatLayer(currentData, {
+            radius: radiusAtZoom,
+            blur: blurAtZoom,
+            max: originalMax,
+            minOpacity: originalMinOpacity,
+            gradient: originalGradient  // Gradiente constante, nunca cambia
+        });
+        
+        // Volver a agregar al mapa si estaba visible
+        if (wasOnMap) {
+            window.map.addLayer(window.heat);
+        }
+    }
+
+    // Función para inicializar el mapa con una ubicación específica
+    function initializeMap(center, zoom) {
+        // Inicializar el mapa
+        window.map = L.map('map', {
+            center: center,
+            zoom: zoom,
+            maxZoom: mapConfig.max_zoom,
+            minZoom: mapConfig.min_zoom,
+            zoomControl: false
+        });
+
+        L.control.zoom({ position: 'bottomright' }).addTo(window.map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(window.map);
+
+        window.markers = L.markerClusterGroup({maxClusterRadius: 30, showCoverageOnHover: false
+        });
+        
+        // Calcular radio inicial basado en el zoom
+        const referenceZoom = 12;
+        const baseRadius = 60;
+        const maxRadius = 100;  // Límite máximo de radio
+        let initialRadius = baseRadius * Math.pow(2, zoom - referenceZoom);
+        
+        // Limitar el radio máximo
+        initialRadius = Math.min(initialRadius, maxRadius);
+        
+        // Calcular blur inicial proporcional al radio
+        let initialBlur = baseBlur * Math.pow(2, zoom - referenceZoom);
+        
+        // Limitar el blur proporcionalmente
+        const maxBlur = (baseBlur / baseRadius) * maxRadius;
+        initialBlur = Math.min(initialBlur, maxBlur);
+        
+        // Crear configuración inicial con radio y blur calculados, manteniendo gradiente constante
+        const initialHeatConfig = {
+            radius: initialRadius,
+            blur: initialBlur,
+            max: originalMax,
+            minOpacity: originalMinOpacity,
+            gradient: originalGradient  // Gradiente constante desde el inicio
+        };
+        
+        window.heat = L.heatLayer([], initialHeatConfig);
+        window.heatmapActive = false;
+        
+        // Actualizar heatmap cuando cambia el zoom
+        window.map.on('zoomend', function() {
+            if (window.heatmapActive) {
+                updateHeatmapRadius();
+            }
+        });
+    }
+
+    // Variables globales para guardar la ubicación inicial del mapa
+    window.initialMapCenter = null;
+    window.initialMapZoom = null;
+    window.mapInitialized = false;
+
+    // Función para notificar que el mapa está inicializado
+    window.onMapInitialized = function() {
+        window.mapInitialized = true;
+        // Disparar evento personalizado para que otros scripts sepan que el mapa está listo
+        if (typeof window.dispatchEvent !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mapInitialized'));
+        }
+    };
+
+    // Inicializar el mapa
+    if (hasSpecificLocation) {
+        // Si hay ubicación específica en la URL, usar esa
+        console.log('Usando ubicación específica de parámetros URL');
+        initializeMap(specificLocation, specificZoom);
+        // Guardar como ubicación inicial
+        window.initialMapCenter = specificLocation;
+        window.initialMapZoom = specificZoom;
+        window.onMapInitialized();
+    } else {
+        // Si no hay ubicación específica, intentar obtener la geolocalización del navegador
+        getBrowserLocation(function(userLocation) {
+            // Actualizar el default_center con la ubicación obtenida (o fallback)
+            mapConfig.default_center = userLocation;
+            console.log('Inicializando mapa con:', userLocation);
+            initializeMap(userLocation, mapConfig.default_zoom);
+            // Guardar como ubicación inicial
+            window.initialMapCenter = userLocation;
+            window.initialMapZoom = mapConfig.default_zoom;
+            window.onMapInitialized();
+        });
+    }
+
+    // Exponer función globalmente
+    window.updateHeatmapRadius = updateHeatmapRadius;
+
+    // Función global para configurar el estado del heatmap
+    window.setHeatmapState = function (active) {
+        if (active) {
+            window.map.addLayer(window.heat);
+            window.heatmapActive = true;
+            updateHeatmapRadius(); // Recalcular radio al activar
+        } else {
+            window.map.removeLayer(window.heat);
+            window.heatmapActive = false;
+        }
+    };
+
+    // Función global para limpiar marcadores
+    window.clearMapMarkers = function () {
+        window.markers.clearLayers();
+        window.heat.setLatLngs([]);
+    };
+
+    // Helper para agregar marcadores desde JSON
+    // shouldFitBounds: si es true, ajusta la vista a los marcadores; si es false, mantiene la vista actual
+    window.addPlacesToMap = function (placesData, shouldFitBounds = true) {
+        window.markers.clearLayers();
+        window.heat.setLatLngs([]);
+        var heatPoints = [];
+
+        placesData.forEach(function (place) {
+            if (place.lat && place.lng) {
+                var marker = L.marker([place.lat, place.lng]);
+
+                var popupContent = `
+                    <div class="font-sans">
+                        <h3 class="text-base font-semibold text-blue-800 mb-1">${place.name}</h3>
+                        ${place.commission_number ? `<p class="text-sm text-gray-700 mb-1">Comisión: ${place.commission_number}</p>` : ''}
+                        <p class="text-sm text-gray-600 mb-2">${place.address}, ${place.city}</p>
+                        ${place.modules.length > 0 ? `<p class="text-sm text-gray-600 mb-2">Módulos: ${place.modules.join(', ')}</p>` : ''}
+                        ${place.turno ? `<p class="text-sm text-gray-600 mb-2">Turno: ${place.turno}</p>` : ''}
+                        ${place.orientation ? `<p class="text-sm text-gray-600 mb-2">Orientación: ${place.orientation}</p>` : ''}
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                window.markers.addLayer(marker);
+                heatPoints.push([place.lat, place.lng]);
+            }
+        });
+
+        window.map.addLayer(window.markers);
+        window.heat.setLatLngs(heatPoints);
+
+        // Ajustar vista del mapa para mostrar todos los marcadores encontrados
+        // Solo si shouldFitBounds es true
+        if (shouldFitBounds && placesData.length > 0 && heatPoints.length > 0) {
+            try {
+                // Calcular bounds desde los datos de puntos directamente
+                var bounds = L.latLngBounds([]);
+                placesData.forEach(function (place) {
+                    if (place.lat && place.lng) {
+                        bounds.extend([place.lat, place.lng]);
+                    }
+                });
+                
+                if (bounds.isValid()) {
+                    // Ajustar vista con un pequeño delay para asegurar que los marcadores estén renderizados
+                    setTimeout(function() {
+                        if (window.map) {
+                            window.map.fitBounds(bounds.pad(0.1), {
+                                maxZoom: 15  // Limitar el zoom máximo para no acercarse demasiado
+                            });
+                        }
+                    }, 100);
+                }
+            } catch (e) {
+                console.warn('Error al ajustar vista del mapa:', e);
+            }
+        }
+
+        // Configurar heatmap si está habilitado globalmente
+        if (typeof show_heatmap !== 'undefined' && show_heatmap) {
+            window.setHeatmapState(show_heatmap);
+            if (document.getElementById('heatmap-toggle')) {
+                document.getElementById('heatmap-toggle').checked = show_heatmap;
+            }
+        }
+    };
+
+    // Helper JS para place_form.html: Capturar lat/lng al hacer clic en el mapa
+    if (document.getElementById('id_lat') && document.getElementById('id_lng')) {
+        var formMap = L.map('form-map', {
+            center: mapConfig.default_center,
+            zoom: mapConfig.default_zoom,
+            maxZoom: mapConfig.max_zoom,
+            minZoom: mapConfig.min_zoom,
+            zoomControl: false
+        });
+
+        L.control.zoom({ position: 'bottomright' }).addTo(formMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(formMap);
+
+        var formMarker;
+        var initialLat = document.getElementById('id_lat').value;
+        var initialLng = document.getElementById('id_lng').value;
+
+        if (initialLat && initialLng) {
+            formMap.setView([initialLat, initialLng], 15);
+            formMarker = L.marker([initialLat, initialLng]).addTo(formMap);
+        } else {
+            formMap.setView(mapConfig.default_center, mapConfig.default_zoom);
+        }
+
+        formMap.on('click', function (e) {
+            var latInput = document.getElementById('id_lat');
+            var lngInput = document.getElementById('id_lng');
+            latInput.value = e.latlng.lat.toFixed(6);
+            lngInput.value = e.latlng.lng.toFixed(6);
+
+            if (formMarker) {
+                formMarker.setLatLng(e.latlng);
+            } else {
+                formMarker = L.marker(e.latlng).addTo(formMap);
+            }
+        });
+
+        formMap.invalidateSize();
+        window.addEventListener('resize', function () {
+            formMap.invalidateSize();
+        });
+    }
+
+    }); // Cierre de DOMContentLoaded
+
+</script>

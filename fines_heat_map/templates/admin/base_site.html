@@ -1,0 +1,256 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | FinEs Mapa Interactivo{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Dashboard link */
+    .dashboard-link-header {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #2424eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.375rem;
+        transition: background-color 0.2s;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-left: 1rem;
+    }
+    .dashboard-link-header:hover {
+        background-color: #1818c0;
+        color: white;
+    }
+    .dashboard-link-header svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-right: 0.5rem;
+    }
+    
+    /* ============================================
+       MEJORAS PARA LOS FORMULARIOS DEL ADMIN
+       ============================================ */
+    
+    /* Alinear botones inline horizontalmente */
+    .related-widget-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    
+    .related-widget-wrapper select,
+    .related-widget-wrapper input[type="text"] {
+        flex: 1 !important;
+        min-width: 200px !important;
+    }
+    
+    /* Mejorar botones inline (editar, agregar, eliminar, ver) */
+    .related-widget-wrapper-link {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important;
+        height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #f3f4f6 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.375rem !important;
+        transition: all 0.2s !important;
+        text-decoration: none !important;
+    }
+    
+    .related-widget-wrapper-link:hover {
+        background-color: #2424eb !important;
+        border-color: #2424eb !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(36, 36, 235, 0.2);
+    }
+    
+    .related-widget-wrapper-link:hover img {
+        filter: brightness(0) invert(1) !important;
+    }
+    
+    .related-widget-wrapper-link img {
+        width: 16px !important;
+        height: 16px !important;
+        opacity: 0.7;
+        transition: all 0.2s !important;
+    }
+    
+    /* Mejorar fieldsets */
+    fieldset.module {
+        background-color: white !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    }
+    
+    fieldset.module h2 {
+        background-color: #f9fafb !important;
+        padding: 0.625rem 1rem !important;
+        margin: -1rem -1rem 0.75rem -1rem !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+    }
+    
+    /* Grid layout para organizar los campos */
+    fieldset.module .form-row {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+        gap: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+        align-items: start !important;
+    }
+    
+    /* Campos que ocupan todo el ancho (full-width) */
+    fieldset.module .form-row.full-width,
+    fieldset.module .form-row:has(textarea),
+    fieldset.module .form-row:has(.vLargeTextField),
+    fieldset.module .form-row:has(.vTextField[style*="width: 100%"]),
+    fieldset.module .form-row:has(input[type="text"][style*="width: 100%"]) {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Campos que deben estar en una sola columna (como coordenadas) */
+    fieldset.module .form-row:has(input[name="lat"]),
+    fieldset.module .form-row:has(input[name="long"]) {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Mejorar form rows */
+    .form-row {
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+    }
+    
+    .form-row label {
+        font-weight: 500 !important;
+        color: #374151 !important;
+        margin-bottom: 0.375rem !important;
+        display: block !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Asegurar que los divs dentro de form-row no rompan el grid */
+    .form-row > div {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Mejorar campos de input */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="url"],
+    select,
+    textarea {
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.375rem !important;
+        padding: 0.5rem 0.75rem !important;
+        transition: all 0.2s !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="email"]:focus,
+    input[type="url"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #2424eb !important;
+        box-shadow: 0 0 0 3px rgba(36, 36, 235, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Mejorar submit row */
+    .submit-row {
+        background-color: #f9fafb !important;
+        padding: 0.875rem 1rem !important;
+        border-top: 1px solid #e5e7eb !important;
+        border-radius: 0 0 0.5rem 0.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    .submit-row input[type="submit"],
+    .submit-row button {
+        padding: 0.65rem 1.5rem !important;
+        font-weight: 500 !important;
+        border-radius: 0.375rem !important;
+        transition: all 0.2s !important;
+        border: none !important;
+    }
+    
+    .submit-row input[type="submit"]:hover,
+    .submit-row button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    
+    .submit-row input[name="_save"] {
+        background-color: #2424eb !important;
+        color: white !important;
+    }
+    
+    .submit-row input[name="_save"]:hover {
+        background-color: #1818c0 !important;
+    }
+    
+    /* Mejorar help text */
+    .help,
+    p.help {
+        color: #6b7280 !important;
+        font-size: 0.8125rem !important;
+        margin-top: 0.25rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Reducir espaciado en campos de checkbox y radio */
+    .form-row input[type="checkbox"],
+    .form-row input[type="radio"] {
+        margin-top: 0.25rem !important;
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Ajustar campos de fecha y hora */
+    .form-row .datetime {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* Reducir padding en el formulario principal */
+    #content {
+        padding: 1rem !important;
+    }
+    
+    /* Ajustar el contenedor del formulario */
+    .module {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Mejorar errores */
+    .errorlist {
+        background-color: #fef2f2 !important;
+        border: 1px solid #fecaca !important;
+        border-radius: 0.375rem !important;
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .errorlist li {
+        color: #dc2626 !important;
+        font-weight: 500 !important;
+    }
+</style>
+{% endblock %}

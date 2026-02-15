@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Error del Servidor - FinEs Mapa Interactivo{% endblock title %}
+{% block content %}
+<div class="flex items-center justify-center min-h-[calc(100vh-160px)] px-4 py-12">
+    <div class="text-center">
+        <p class="text-base font-semibold text-red-600">500</p>
+        <h1 class="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">¡Chan! Error interno del servidor.
+        </h1>
+        <p class="mt-6 text-base leading-7 text-gray-600">Algo salió mal de nuestra parte. Estamos trabajando para
+            solucionarlo.</p>
+        <div class="mt-10 flex items-center justify-center gap-x-6">
+            <a href="{% url 'home' %}"
+                class="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Volver al inicio
+            </a>
+            <a href="{% url 'accessibility_policy' %}" class="text-sm font-semibold text-gray-900 hover:text-blue-700">
+                Ver política de accesibilidad <span aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
