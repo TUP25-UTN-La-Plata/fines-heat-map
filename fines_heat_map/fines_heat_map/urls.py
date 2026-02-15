@@ -17,11 +17,28 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from .views import home
+from django.views.generic import TemplateView
+from .views import home, preview_404, preview_500
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", home, name="home"),
+    # Alias temporal para mantener compatibilidad con templates legacy.
+    path("inicio/", home, name="map_home"),
+    path("contacto/", TemplateView.as_view(template_name="contact.html"), name="contact"),
+    path(
+        "politica-privacidad/",
+        TemplateView.as_view(template_name="privacy_policy.html"),
+        name="privacy_policy",
+    ),
+    path(
+        "politica-accesibilidad/",
+        TemplateView.as_view(template_name="accessibility_policy.html"),
+        name="accessibility_policy",
+    ),
+    # Vistas de previsualización para validar páginas de error en desarrollo.
+    path("errores/404/", preview_404, name="preview_404"),
+    path("errores/500/", preview_500, name="preview_500"),
     path(
         "mapa/",
         include(("heatmap.urls", "heatmap"), namespace="heatmap"),
@@ -41,3 +58,6 @@ urlpatterns = [
         ),
     ),
 ]
+
+handler404 = "fines_heat_map.views.custom_404"
+handler500 = "fines_heat_map.views.custom_500"
