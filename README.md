@@ -1,54 +1,105 @@
-# 🗺️ FinEs Mapa Interactivo
+# Mapify Mapa Interactivo
 
-Sistema web de visualización de densidad educativa para instituciones del programa FinEs mediante mapas de calor interactivos.
+Sistema web para visualizar sedes y comisiones del programa FinEs, con mapa interactivo, filtros y panel de administración.
 
 ![Django](https://img.shields.io/badge/Django-5.2.7-green)
-![Python](https://img.shields.io/badge/Python-3.13.5-blue)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-brightgreen)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Latest-blue)
+![DRF](https://img.shields.io/badge/DRF-3.16.1-red)
 
-## 🎯 Características Principales
+## Intergrantes y principales responsabilidades:
+- Rodrigo Benítez: Frontend, test y validaciones de datos.
+- Manuel Guzmán: Frontend, test y validaciones de datos.
+- Santiago Matheu: Diseño UX/UI y Frontend.
+- Joaquín Miró: Mapa interactivo y Frontend.
+- Martín Ramallo: Backend y Backoffice.
 
-- **📊 Mapa de Calor**: Visualización de densidad de instituciones educativas
-- **🎨 Admin Moderno**: Panel administrativo personalizado con Tailwind CSS
-- **🔍 Filtros Avanzados**: Búsqueda por ubicación, tipo y características
-- **📱 Responsive**: Diseño adaptable para todos los dispositivos
-- **🔐 Seguro**: Autenticación y protección CSRF integrada
+Estas son las áreas funcionales y responsabilidades que nos divimos en el equipo, si bien, fuimos compartiendo y colaborando en el código en todo el proyecto.
 
-## 🚀 Instalación Rápida
+## Estado actual del proyecto
+
+- Backend con Django 5.2.7 y Django REST Framework.
+- Base de datos configurada para PostgreSQL via `DATABASE_URL`.
+- Mapa en `mapa/` con endpoints JSON para sedes y filtros.
+- Gestión de instituciones/comisiones con vistas y APIs.
+- Admin personalizado con `django-unfold`.
+- Páginas estáticas para políticas de privacidad y accesibilidad.
+
+## Stack real
+
+- Python, Django 5.2.7, DRF 3.16.1.
+- PostgreSQL (`psycopg2-binary` + `dj-database-url`).
+- `django-unfold` para el panel de administración.
+- `django-import-export` para carga/exportación de datos.
+- Leaflet 1.9.4 + Leaflet MarkerCluster + Leaflet.heat.
+- Templates Django + JavaScript.
+
+## Estructura del repositorio
+
+```text
+fines-heat-map/
+├── requirements.txt
+├── tailwind.config.js
+├── src/input.css
+└── fines_heat_map/
+    ├── manage.py
+    ├── fines_heat_map/              # settings, urls, wsgi, vistas base
+    ├── heatmap/                     # mapa + API de sedes
+    ├── gestion_instituciones/       # instituciones, modelos y comandos
+    ├── gestion_comisiones/          # comisiones, modelos y APIs
+    ├── templates/
+    └── static/
+```
+
+## Instalacion y puesta en marcha
 
 ### Prerrequisitos
 
-- Python 3.9+
-- pip
-- Git
+- Python 3.10 o superior.
+- pip.
+- Git.
+- Una base PostgreSQL accesible mediante URL.
 
-### Pasos de Instalación
-
-1. **Clonar el repositorio**
+### 1) Clonar
 
 ```bash
 git clone https://github.com/TUP25-UTN-La-Plata/fines-heat-map.git
 cd fines-heat-map
 ```
 
-2. **Crear entorno virtual**
+### 2) Crear y activar entorno virtual
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+**Linux/macOS:**
 
 ```bash
 python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
 source venv/bin/activate
 ```
 
-3. **Instalar dependencias**
+### 3) Instalar dependencias Python
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Configurar base de datos**
+### 4) Configurar variables de entorno
+
+Crear un archivo `.env` en la raiz del proyecto con:
+
+```env
+DATABASE_URL=postgresql://usuario:password@host:puerto/dbname
+```
+
+> Nota: el proyecto usa `dj_database_url` con `ssl_require=True`.
+
+### 5) Migrar y crear usuario admin
 
 ```bash
 cd fines_heat_map
@@ -56,142 +107,70 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-5. **Ejecutar servidor**
+### 6) Ejecutar servidor
 
 ```bash
 python manage.py runserver
 ```
 
-6. **Acceder a la aplicación**
+## Rutas principales
 
-- **Mapa Principal**: http://127.0.0.1:8000/mapa/
-- **Panel Admin**: http://127.0.0.1:8000/admin/
+- `/` Home.
+- `/inicio/` Alias de inicio para compatibilidad con templates legacy.
+- `/mapa/` Mapa interactivo.
+- `/mapa/api/sedes/` API de sedes con filtros.
+- `/mapa/api/sedes/buscar/?nombre=...` Busqueda de sedes por nombre.
+- `/instituciones/` Listado de instituciones.
+- `/instituciones/<id>/` Detalle de institucion.
+- `/comisiones/` Listado de comisiones.
+- `/comisiones/api/modulos/` API de modulos.
+- `/comisiones/api/orientaciones/` API de orientaciones.
+- `/politica-privacidad/` Política de privacidad.
+- `/politica-accesibilidad/` Política de accesibilidad.
+- `/admin/` Panel administrativo.
+- `/errores/404/` y `/errores/500/` Previsualización de páginas de error.
 
-### Requisitos previos
+## Comandos utiles
 
-- Python >= 3.10
-- Node.js >= 16.x
-- npm (viene con Node.js)
-- Git
+Desde `fines_heat_map/`:
 
-1. **Clona el repositorio:**
+```bash
+python manage.py runserver
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py cargar_partidos
+python manage.py cargar_localidades
+python manage.py test
+```
 
-   ```bash
-   git clone <url-del-repositorio>
-   cd fines-heat-map
-   ```
+## Testing
 
-2. **Crea y activa el entorno virtual:**
+- Comando local: `python manage.py test` (desde `fines_heat_map/`).
+- CI: se ejecuta en cada push y pull request mediante `.github/workflows/django-tests.yml`.
 
-   **En Windows (PowerShell):**
+## Manejo de errores
 
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\Activate.ps1
-   ```
+- Existen templates personalizados `404.html` y `500.html`.
+- En producción (`DEBUG=False`) Django usa estos templates mediante `handler404` y `handler500`.
 
-   **En Windows (Command Prompt):**
+## Nota sobre Tailwind CSS
 
-   ```cmd
-   python -m venv venv
-   venv\Scripts\activate.bat
-   ```
+Actualmente `base.html` carga Tailwind desde CDN (`https://cdn.tailwindcss.com`), por lo que la app funciona sin paso de build CSS local.
 
-   **En Linux/macOS:**
+Existen archivos de configuracion (`tailwind.config.js`, `src/input.css`, `static/css/output.css`) para un flujo de compilacion local, pero en este estado del repo no hay `package.json` versionado con scripts npm.
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+## Dependencias Python (requirements.txt)
 
-3. **Instala las dependencias:**
+- Django==5.2.7
+- djangorestframework==3.16.1
+- django-unfold==0.30.0
+- django-import-export==4.3.14
+- psycopg2-binary==2.9.11
+- dj-database-url==3.0.1
+- python-dotenv==1.2.1
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Observaciones
 
-4. **Configurar Tailwind CSS:**
-   ```bash
-   npm install
-   npm run build-css-prod
-   ```
-
----
-
-## 🎯 Funcionalidades principales
-
-- **Mapa interactivo** con pines por comisión (usando Leaflet/OpenStreetMap).
-- **Popups con información de cada comisión**: nombre de sede, número de comisión, tutor responsable (solo nombre, ver posibilidad de teléfono), turno, módulos y orientación.
-- **Filtros dinámicos** por turno, módulo y orientación.
-- **Mapa de calor (heatmap)** opcional para ver concentración de comisiones.
-- **CRUD de comisiones** (solo para usuarios admin/coordinadores).
-- **Panel de administración** para gestionar sedes y comisiones.
-- **Responsive design**: funcional en escritorio y dispositivos móviles.
-- **Accesibilidad**: texto legible, botones grandes y microcopy positivo.
-
----
-
-## 🧑‍🤝‍🧑 Público objetivo
-
-- Estudiantes adultos (>18 años) que buscan completar su secundaria.
-- Familiares y tutores que ayudan en la búsqueda de comisiones.
-- Coordinadores FinEs que administran sedes y comisiones.
-
----
-
-## 🎨 Estilo y experiencia
-
-- Minimalista y moderno, con **paleta positiva y educativa** (agua, verde menta, celeste, acentos cálidos).
-- Tipografía legible y amigable (Inter, Nunito o Poppins).
-- Diseño motivador, inclusivo y optimista.
-- Interfaz centrada en accesibilidad y usabilidad para adultos con poca experiencia digital.
-
----
-
-## 🛠 Stack tecnológico
-
-- **Backend:** Python 3.x + Django + Django REST Framework
-- **Base de datos:** PostgreSQL (integrada con Django, usando ArrayField para módulos)
-- **Frontend:** Templates Django + Leaflet + Leaflet.heat + JavaScript
-- **Autenticación:** Django admin para usuarios coordinadores/admin
-- **Contenedores:** Docker + Docker Compose (opcional para desarrollo)
-- **Importación de datos:** CSV mediante management command en Django
-
----
-
-## ⚙ Requerimientos técnicos
-
-- Python >= 3.10
-- Django >= 4.2
-- Django REST Framework >= 3.14
-- psycopg2-binary (para PostgreSQL)
-- Leaflet.js y Leaflet.heat para la visualización de mapas
-- Navegador moderno (Chrome, Firefox, Edge, Safari)
-- Docker y Docker Compose (opcional, recomendado para desarrollo local)
-
-### Requerimientos funcionales
-
-- CRUD de comisiones (solo para administradores)
-- Visualización de mapa interactivo con filtros
-- Mapa de calor opcional
-- Popups con información detallada de la comisión
-- Panel de administración seguro y accesible
-
-### Requerimientos no funcionales
-
-- Responsive y usable en dispositivos móviles
-- Accesibilidad: texto claro, contraste suficiente, botones grandes
-- Rendimiento: carga rápida del mapa con muchas comisiones
-- Seguridad: autenticación para admin, HTTPS en producción
-
----
-
-## 🏗 Infraestructura recomendada
-
-- **Base de datos:** PostgreSQL alojada en la misma app (desarrollo) o en servicio cloud (producción: Render, Heroku, Digital Ocean).
-- **Backend:** Django + REST Framework (API + templates)
-- **Frontend:** Leaflet en templates Django
-- **Contenedores (opcional):** Docker Compose para DB y backend
-- **Hosting producción:** Render, Heroku, AWS, o Digital Ocean.
-
----
+- `settings.py` tiene `DEBUG = True` en el estado actual.
+- `ALLOWED_HOSTS` esta orientado a entorno local.
+- Para produccion, ajustar variables sensibles y configuracion de seguridad.
