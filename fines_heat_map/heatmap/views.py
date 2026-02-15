@@ -7,23 +7,21 @@ from gestion_instituciones.models import Sede
 from gestion_instituciones.serializers import SedeCompletaSerializer
 
 def mapa(request):
-    """
-    Vista del mapa interactivo con filtros dinámicos.
-    """
+    """Renderiza el mapa principal y aplica filtros desde query params."""
     # Inicializar formulario con datos GET
     form = MapFilterForm(request.GET or None)
 
-    # Obtener parámetros para centrar el mapa en una ubicación específica
+    # Permite re-centrar el mapa cuando se navega desde el listado de sedes.
     center_lat = request.GET.get("lat")
     center_lng = request.GET.get("lng")
     zoom_level = request.GET.get("zoom", str(settings.MAP_CONFIG["default_zoom"]))
     place_name = request.GET.get("name")
     show_heatmap = request.GET.get("heatmap", "").lower() == "true"
 
-    # Obtener datos de lugares (usar ejemplo de settings por ahora)
+    # Fuente transitoria: datos mock declarados en settings para desarrollo.
     places_data = settings.EXAMPLE_PLACES.copy()
 
-    # Aplicar filtros si el formulario es válido
+    # Los filtros se aplican en memoria hasta completar la integración full con modelos.
     if form.is_valid():
         filters = form.get_filter_params()
 
@@ -66,7 +64,7 @@ def mapa(request):
                 if place.get("orientation") == filters["orientation"]
             ]
 
-    # TODO: Reemplazar con consulta real a modelos cuando estén listos
+    # TODO: Reemplazar con consulta real a modelos cuando estén listos.
     # from .models import Place
     # places = Place.objects.filter(**filters)
     # places_data = [place.to_dict() for place in places]
@@ -85,9 +83,9 @@ def mapa(request):
 
 
 def get_sedes_data(request):
-    # Endpoint para obtener los datos de las sedes con filtros de turno, orientación y módulo.
+    """Devuelve sedes activas en JSON, con filtros opcionales por comisión."""
 
-     # Obtener parámetros de query (solo IDs y letra de turno)
+    # Se aceptan IDs numéricos y letra de turno para compatibilidad con el frontend.
     modulo_id = request.GET.get('moduloID')
     turno = request.GET.get('turno')  # 'M', 'T', 'V', 'N'
     orientacion_id = request.GET.get('orientacionID')
@@ -98,10 +96,9 @@ def get_sedes_data(request):
         .prefetch_related('comisiones', 'comisiones__orientacion', 'comisiones__modulo')
     )
 
-    # Aplicar filtros solo si hay parámetros
-    # Si alguna comisión de la sede cumple los criterios, traemos la sede completa
+    # Si alguna comisión de la sede cumple, se devuelve la sede completa.
     if modulo_id or turno or orientacion_id:
-        filters = Q(comisiones__deleted_at=None)  # Solo comisiones activas
+        filters = Q(comisiones__deleted_at=None)  # Solo comisiones activas.
         
         if modulo_id:
             try:
@@ -110,7 +107,7 @@ def get_sedes_data(request):
                 pass
         
         if turno:
-            # Validar que sea una letra válida
+            # Solo se aceptan códigos de turno definidos por negocio.
             if turno in ['M', 'T', 'V', 'N']:
                 filters &= Q(comisiones__turno=turno)
         
@@ -120,7 +117,7 @@ def get_sedes_data(request):
             except (ValueError, TypeError):
                 pass
         
-        # Filtrar sedes que tengan al menos una comisión que cumpla los criterios
+        # Evita duplicados por joins sobre comisiones.
         sedes = sedes.filter(filters).distinct()
 
     serializer = SedeCompletaSerializer(sedes, many=True)
@@ -129,13 +126,13 @@ def get_sedes_data(request):
 
 
 def buscar_sedes_por_nombre(request):
-    # Endpoint para buscar sedes por nombre (búsqueda parcial, case-insensitive)
+    """Busca sedes por coincidencia parcial de nombre (case-insensitive)."""
     nombre = request.GET.get('nombre', '').strip()
     
     if not nombre:
         return JsonResponse({'error': 'El parámetro "nombre" es requerido'}, status=400)
     
-    # Búsqueda case-insensitive que contiene el término
+    # `icontains` permite búsqueda parcial sin depender de mayúsculas/minúsculas.
     sedes = (
         Sede.objects.filter(
             deleted_at=None,

@@ -1,0 +1,46 @@
+# FinEs Mapa Interactivo - Project Rules
+
+You are an expert Full Stack Developer specializing in Python, Django 5+, and Geographic Information Systems (GIS) using Leaflet.js. You are working on "FinEs Mapa Interactivo", a web system to visualize educational density for the FinEs program.
+
+## 🛠️ Tech Stack & Versions
+- **Backend:** Python 3.13.5, Django 5.2.7, Django REST Framework (DRF).
+- **Database:** PostgreSQL (NeonTech), using `psycopg2-binary`.
+- **Frontend:** Django Templates (HTML), TailwindCSS (Latest), JavaScript (ES6+).
+- **Maps:** Leaflet 1.9.4, Leaflet.heat (Heatmaps).
+- **Deployment:** Vercel (Serverless adaptation) / Render.
+
+## 🧠 Core Principles
+1.  **Performance First:** When querying `Sede` or `Comision` models, ALWAYS use `.select_related()` and `.prefetch_related()` to avoid N+1 queries. This is critical for map data endpoints.
+2.  **Tailwind Priority:** Always use Tailwind utility classes for styling. Do not write custom CSS in `<style>` blocks unless strictly necessary (e.g., specific Leaflet overrides or complex animations).
+3.  **Modern Django:** Use class-based views (CBVs) for APIs (DRF) and function-based views (FBVs) for simple template rendering if appropriate. Use standard Django templating tags (`{% static %}`, `{% url %}`).
+4.  **Language:**
+    - **Code (Variables/Functions):** Use meaningful names in **Spanish** (e.g., `get_sedes_data`, `mapa`, `comision`) or **English** but maintain consistency with existing code.
+    - **Comments & Explanations:** ALWAYS write comments and explain your reasoning in **Spanish**.
+
+## 📍 Map & Heatmap Specifics
+- **Leaflet Initialization:** Ensure the map container has a defined height (via Tailwind classes like `h-[85vh]`).
+- **Heatmap Logic:** The heatmap MUST handle zoom levels dynamically.
+  - *Rule:* The radius of heat points must scale mathematically with zoom (`Math.pow`) to represent physical distance, not just screen pixels.
+  - *Constraint:* Implement limits (max radius) to prevent rendering artifacts on high zoom.
+- **Data Loading:** Use asynchronous `fetch` to load map data from the `/api/sedes/` endpoint. Do not embed large JSON datasets directly in HTML templates.
+
+## 🐍 Python/Django Guidelines
+- **Type Hinting:** Use `typing` (e.g., `List`, `Dict`, `Any`) in function signatures.
+- **Serializers:** Use `ModelSerializer` with `read_only=True` for GET endpoints. Use nested serializers for relationships (e.g., displaying `Comisiones` inside a `Sede`).
+- **Settings:** Respect the separation of settings (local vs. production). Be aware of `whitenoise` for static files in production.
+
+## 💾 Database & Models
+- **Spatial Data:** We store coordinates as `lat` (float) and `long` (float) fields in the `Sede` model.
+- **Import/Export:** We use `django-import-export` or custom management commands for bulk data loading from CSV.
+- **Constraints:** `deleted_at` is used for soft-deletes. Always filter `deleted_at__isnull=True` unless specified otherwise.
+
+## 🎨 Frontend & UI
+- **Design System:** Clean, minimalist, educational vibe. Colors: Teal, Blue, White, Warm Accents.
+- **Responsiveness:** Mobile-first approach. Ensure the map and sidebar/modals work on touch devices.
+- **Icons:** Use emojis or SVG icons compatible with Tailwind.
+
+## 🚀 Deployment Context (Vercel)
+- Remember that the app runs in a serverless environment on Vercel.
+- `wsgi.py` uses `app = application` alias.
+- Static files are served via Whitenoise.
+- Do not suggest persistent file system storage solutions (media files), use cloud storage or DB if needed.

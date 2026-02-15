@@ -6,7 +6,8 @@ from django.shortcuts import render
 
 
 def home(request):
-    # Datos de ejemplo para mostrar en el sidebar
+    """Renderiza la pantalla principal con datos de ejemplo para desarrollo."""
+    # Se mantienen datos mock para no depender de carga de BD en el home.
     places_example = [
         {
             "id": 1,
@@ -32,5 +33,26 @@ def home(request):
         },
     ]
 
+    # `show_heatmap` arranca en False para evitar superposición inicial de capas.
     context = {"places": places_example, "show_heatmap": False}
     return render(request, "home.html", context)
+
+
+def custom_404(request, exception):
+    """Renderiza la página 404 personalizada."""
+    return render(request, "404.html", status=404)
+
+
+def custom_500(request):
+    """Renderiza la página 500 personalizada."""
+    return render(request, "500.html", status=500)
+
+
+def preview_404(request):
+    """Permite visualizar el template 404 en desarrollo."""
+    return custom_404(request, exception=None)
+
+
+def preview_500(request):
+    """Permite visualizar el template 500 en desarrollo."""
+    return custom_500(request)

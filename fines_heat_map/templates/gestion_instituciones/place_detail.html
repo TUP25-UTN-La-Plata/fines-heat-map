@@ -1,5 +1,6 @@
-{% extends "base.html" %} {% block title %}{{ place.name }} - Detalle{% endblock
-title %} {% block head_extra %}
+{% extends "base.html" %}
+{% block title %}{{ place.name }} - Detalle{% endblock title %}
+{% block head_extra %}
 <style>
     #detail-map {
         height: 300px;
@@ -7,7 +8,8 @@ title %} {% block head_extra %}
         border-radius: 0.5rem;
     }
 </style>
-{% endblock head_extra %} {% block content %}
+{% endblock head_extra %}
+{% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-xl overflow-hidden">
         <!-- Contenido del detalle -->
@@ -146,7 +148,7 @@ title %} {% block head_extra %}
         {% endif %}
     </div>
     <div class="mt-8 text-center">
-        <a href="{% url 'gestion_instituciones:lista_instituciones' %}"
+        <a href="{% url 'instituciones:lista_instituciones' %}"
             class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <svg class="-ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                 fill="currentColor" aria-hidden="true">
@@ -158,7 +160,9 @@ title %} {% block head_extra %}
         </a>
     </div>
 </div>
-{% endblock content %} {% block scripts_extra %} {% if place.lat and place.lng %}
+{% endblock content %}
+{% block scripts_extra %}
+{% if place.lat and place.lng %}
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -210,4 +214,5 @@ title %} {% block head_extra %}
     });
 </script>
 
-{% endif %} {% endblock scripts_extra %}
+{% endif %}
+{% endblock scripts_extra %}

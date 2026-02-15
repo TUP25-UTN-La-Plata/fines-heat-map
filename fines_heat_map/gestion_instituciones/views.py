@@ -7,7 +7,7 @@ USE_TEST_DATA = True  # Cambiar a False para volver al estado original
 
 
 def get_test_data():
-    """Datos simulados para testing - TEMPORAL"""
+    """Retorna un set controlado de sedes para desarrollo y pruebas manuales."""
     if not USE_TEST_DATA:
         return []
 
@@ -143,14 +143,15 @@ def get_test_data():
 
 # Create your views here.
 def lista_instituciones(request):
-    # Inicializar formulario con datos GET
+    """Lista instituciones con filtros y paginación."""
+    # Se toma GET para preservar filtros al navegar entre páginas.
     form = InstitucionFilterForm(request.GET or None)
     
     if USE_TEST_DATA:
         # Obtener datos de prueba
         test_places = get_test_data()
         
-        # Aplicar filtros si el formulario es válido
+        # Se filtra sobre datos mock para desacoplar esta vista de la BD productiva.
         if form.is_valid():
             filters = form.get_filter_params()
             
@@ -191,7 +192,7 @@ def lista_instituciones(request):
                     if place.get('orientation') == filters['orientation']
                 ]
         
-        # Simular paginación con datos filtrados
+        # Se mantiene paginación para conservar comportamiento de UI final.
         paginator = Paginator(test_places, 10)  # 10 por página
         page = request.GET.get("page", 1)
         paginated_places = paginator.get_page(page)
@@ -208,9 +209,9 @@ def lista_instituciones(request):
 
 
 def detalle_institucion(request, pk):
-    """Vista de detalle de una institución"""
+    """Muestra el detalle de una institución por ID."""
     if USE_TEST_DATA:
-        # Buscar en datos de prueba
+        # Búsqueda local mientras USE_TEST_DATA esté activo.
         test_places = get_test_data()
         place = next((p for p in test_places if p['id'] == int(pk)), None)
         
@@ -220,7 +221,7 @@ def detalle_institucion(request, pk):
         
         context = {"place": place}
     else:
-        # Cuando tengamos modelos reales
+        # Ruta real para producción cuando la fuente principal sea la base.
         from django.shortcuts import get_object_404
         from .models import Sede
         place = get_object_404(Sede, pk=pk, deleted_at=None)
